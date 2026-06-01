@@ -21,5 +21,9 @@ export default defineConfig({
     watch: {
       ignored: ['**/storage/**', '**/tmp/**'],
     },
+    allowedHosts: [
+      '.ngrok-free.dev', // Allows any ngrok subdomain ending in .ngrok-free.dev
+      '.loca.lt', // Allows localtunnel too, just in case
+    ],
   },
 })

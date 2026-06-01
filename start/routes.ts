@@ -28,3 +28,6 @@ router
     router.post('logout', [controllers.Session, 'destroy'])
   })
   .use(middleware.auth())
+
+// Route to handle webhook from whatsapp
+router.post('webhooks/whatsapp', [controllers.Webhooks, 'handleWhatsApp'])
