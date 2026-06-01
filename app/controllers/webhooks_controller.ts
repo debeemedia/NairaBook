@@ -23,8 +23,8 @@ export default class WebhooksController {
      * @todo: Use a queue for this later.
      */
     // Don't await this call so that the 200 response is sent to Twilio immediately.
-    AiService.processVoiceNote(mediaUrl).catch((error) => {
-      logger.error({ err: error }, '[WebhooksController.handleWhatsApp] Error calling AI Service')
+    AiService.processVoiceNote(mediaUrl).catch(() => {
+      // Appropriate logs are in the service.
     })
 
     return response.ok({})
