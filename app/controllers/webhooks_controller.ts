@@ -52,14 +52,16 @@ export default class WebhooksController {
             `)
       }
 
-      if (fileSizeInBytes > 7 * 1024 * 1024 /* Max 7MB */) {
+      const maxFileSizeInMB = 7
+
+      if (fileSizeInBytes > maxFileSizeInMB * 1024 * 1024) {
         logger.warn(
           { fileSizeInBytes },
-          '[WebhooksController.handleWhatsApp] Rejected file: Exceeds 8MB limit.'
+          `[WebhooksController.handleWhatsApp] Rejected file: Exceeds ${maxFileSizeInMB}MB limit.`
         )
         return response.status(200).header('Content-Type', 'text/xml').send(`
               <Response>
-                <Message>Boss, this voice note is too long! Please keep your recording short and under 7MB.</Message>
+                <Message>Boss, this voice note is too long! Please keep your recording short and under ${maxFileSizeInMB}MB.</Message>
               </Response>
             `)
       }
