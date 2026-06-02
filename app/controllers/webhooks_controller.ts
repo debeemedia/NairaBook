@@ -1,8 +1,13 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import AiService from '../../services/ai_service.ts'
+import BaseAIService from '../../services/ai_service/base_ai_service.ts'
+import { inject } from '@adonisjs/core'
 
 export default class WebhooksController {
-  public async handleWhatsApp({ request, response, logger }: HttpContext) {
+  @inject()
+  public async handleWhatsApp(
+    { request, response, logger }: HttpContext,
+    aiService: BaseAIService
+  ) {
     const payload = request.all()
 
     logger.info({ payload }, '[WebhooksController.handleWhatsApp] Incoming Payload...')
@@ -23,7 +28,7 @@ export default class WebhooksController {
      * @todo: Use a queue for this later.
      */
     // Don't await this call so that the 200 response is sent to Twilio immediately.
-    AiService.processVoiceNote(mediaUrl).catch(() => {
+    aiService.processVoiceNote(mediaUrl).catch(() => {
       // Appropriate logs are in the service.
     })
 

@@ -27,5 +27,7 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   TWILIO_ACCOUNT_SID: Env.schema.string(),
   TWILIO_AUTH_TOKEN: Env.schema.string(),
+  AI_SERVICE_PROVIDER: Env.schema.enum(['aethex', 'groq']),
   GROQ_API_KEY: Env.schema.string(),
+  AETHEX_API_KEY: Env.schema.string(),
 })
