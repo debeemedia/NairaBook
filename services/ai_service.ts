@@ -8,7 +8,7 @@ export default class AiService extends BaseService {
   public static async processVoiceNote(mediaUrl: string) {
     const downloadedBuffer = await this.#downloadMedia(mediaUrl)
 
-    const text = await this.#transcribeAudio(downloadedBuffer)
+    const text = await this.#transcribeAudioWithAethex(downloadedBuffer)
 
     console.log('here is the text: ', text)
     /**
@@ -16,7 +16,58 @@ export default class AiService extends BaseService {
      */
   }
 
-  static async #transcribeAudio(audioBuffer: ArrayBuffer) {
+  static async #transcribeAudioWithAethex(audioBuffer: ArrayBuffer): Promise<string> {
+    const audioBlob = new Blob([audioBuffer], { type: 'audio/ogg' })
+
+    const formData = new FormData()
+    formData.append('file', audioBlob, 'voice_note.ogg')
+    // formData.append('language', 'english')
+
+    try {
+      const response = await fetch('https://api.aethexai.com/api/v1/transcribe', {
+        method: 'POST',
+        headers: {
+          'X-API-Key': env.get('AETHEX_API_KEY'),
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => 'Unknown Error')
+
+        this.logger.error(
+          { status: response.status, statusText: response.statusText, errorBody },
+          '[AiService.#transcribeAudioWithAethex] Aethex API responded with non-success.'
+        )
+
+        throw new Error(`Aethex API responded with status ${response.status}: ${errorBody}`)
+      }
+
+      const data = (await response.json()) as {
+        id: string
+        text: string
+        language: string
+        duration_seconds: number
+        segments: []
+        status: string
+        processing_time_ms: number
+        created_at: string
+      }
+
+      this.logger.info({ data }, '[AiService.#transcribeAudioWithAethex] Transcription success.')
+
+      return data.text
+    } catch (error) {
+      this.logger.error(
+        { err: error },
+        '[AiService.#transcribeAudioWithAethex] Failed to send to Aethex AI.'
+      )
+
+      throw error
+    }
+  }
+
+  static async #transcribeAudioWithGroq(audioBuffer: ArrayBuffer) {
     const file = new File([audioBuffer], 'voice_note.ogg', { type: 'audio/ogg' })
 
     let transcription: Groq.Audio.Transcriptions.Transcription | null = null
@@ -28,12 +79,15 @@ export default class AiService extends BaseService {
         file,
       })
     } catch (error) {
-      this.logger.error({ err: error }, '[AiService.#transcribeAudio] Failed to transcribe audio.')
+      this.logger.error(
+        { err: error },
+        '[AiService.#transcribeAudioWithGroq] Failed to transcribe audio.'
+      )
 
       throw error
     }
 
-    this.logger.info('[AiService.#transcribeAudio] Audio transcription successful.')
+    this.logger.info('[AiService.#transcribeAudioWithGroq] Audio transcription successful.')
 
     return transcription.text
   }
