@@ -1,7 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import BaseAIService from '../../services/ai_service/base_ai_service.ts'
+import BaseAIService from '../services/ai_service/base_ai_service.ts'
 import { inject } from '@adonisjs/core'
-import MediaService from '../../services/media_service.ts'
+import MediaService from '../services/media_service.ts'
 
 export default class WebhooksController {
   @inject()

@@ -1,5 +1,5 @@
 import type { ApplicationService } from '@adonisjs/core/types'
-import BaseAIService from '../services/ai_service/base_ai_service.ts'
+import BaseAIService from '../app/services/ai_service/base_ai_service.ts'
 import env from '#start/env'
 
 export default class AppProvider {
@@ -10,8 +10,8 @@ export default class AppProvider {
    */
   register() {
     this.app.container.bind(BaseAIService, async () => {
-      const aethexAiService = (await import('../services/ai_service/aethex_ai.ts')).default
-      const groqAiService = (await import('../services/ai_service/groq_ai.ts')).default
+      const aethexAiService = (await import('../app/services/ai_service/aethex_ai.ts')).default
+      const groqAiService = (await import('../app/services/ai_service/groq_ai.ts')).default
 
       return env.get('AI_SERVICE_PROVIDER').toLowerCase() === 'aethex'
         ? new aethexAiService()
