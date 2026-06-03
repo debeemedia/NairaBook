@@ -1,0 +1,192 @@
+import BaseService from '../base_service.ts'
+import env from '#start/env'
+import Groq from 'groq-sdk'
+import MediaService from '../media_service.ts'
+import { BusinessMetricsStructure } from '../../../contracts/app.ts'
+import LedgerService from '#services/ledger_service'
+
+export default abstract class BaseAIService extends BaseService {
+  public async processVoiceNote({ mediaUrl, userId }: { mediaUrl: string; userId: number }) {
+    const downloadedBuffer = await MediaService.download(mediaUrl)
+
+    const text = await this.transcribeAudio(downloadedBuffer)
+
+    if (!text || text.trim() === '') {
+      this.logger.warn({ userId }, '[BaseAIService] Received empty transcript.')
+      return
+    }
+
+    const metrics = await this.extractBusinessMetrics(text)
+
+    if (metrics.intent === 'unknown') {
+      this.logger.warn(
+        { userId, metrics },
+        '[BaseAIService.processVoiceNote] Could not resolve intent from transcript.'
+      )
+
+      return
+      /**
+       * @todo: Send a WhatsApp reply back saying "I didn't quite catch that business action"
+       */
+    }
+
+    try {
+      // Handle Transactions: sales & expenses
+      if (
+        metrics.intent === 'transaction' &&
+        (metrics.type === 'sale' || metrics.type === 'expense')
+      ) {
+        return await LedgerService.handleTransaction({ metrics, userId })
+      }
+
+      // Handle Debts: customer credit
+      if (metrics.type === 'debt') {
+        return await LedgerService.handleDebt({ metrics, userId })
+      }
+
+      // Handle Debt Repayment: partial or full
+      if (metrics.type === 'repayment') {
+        return await LedgerService.handleDebtRepayment({ metrics, userId })
+      }
+
+      // Handle Inventory: restocking products
+      if (metrics.intent === 'inventory' || metrics.type === 'restock') {
+        return await LedgerService.handleProductInventory({ metrics, userId })
+      }
+
+      /**
+       * @todo: Send a message of acknowledgement
+       */
+    } catch (error) {
+      this.logger.error(
+        { err: error, metrics },
+        '[BaseAIService.processVoiceNote -> LedgerService] Database persistence failed for extracted metrics.'
+      )
+
+      throw error
+    }
+  }
+
+  protected abstract transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
+
+  protected groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
+
+  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
+    const prompt = `
+      You are a specialized financial parsing engine for NairaBook, a ledger app for Nigerian micro-merchants.
+      Your job is to parse raw text transcripts (which may include Nigerian Pidgin, local business slang, or currency terms) and output a STRICT, valid JSON object.
+      
+      Rules for parsing:
+      1. Map local terms accurately based on WHO is performing the action: 
+         - MERCANT SELLING: "I sell", "somebody buy from me", "[Customer Name] bought", "[Customer Name] collect", "[Customer Name] pay me" -> intent is "transaction", type is "sale"
+         - CUSTOMER CREDIT: "dey owe", "collect on credit", "customer never pay", "[Customer Name] never pay" -> intent is "transaction", type is "debt"
+         - DEBT REPAYMENT: "customer pay part of their debt", "clear money", "[Customer Name] bring money for what he took" -> intent is "transaction", type is "repayment"
+         - MERCHANT OPERATING EXPENSE: "I buy fuel", "pay rent", "transportation" -> intent is "transaction", type is "expense"
+         - MERCHANT RESTOCKING: "restock", "add new stock", "I buy market", "I buy [goods/items to sell]" -> intent is "inventory", type is "restock"
+         
+      CRITICAL BUSINESS RULES: 
+      1. SUBJECT AWARENESS: Distinguish between the merchant ("I") and a customer (e.g., "Tunde", "Musa", "Mama Amaka").
+         - If a specific person's name is mentioned buying something (e.g., "Tunde bought one cup of rice"), this is a "sale" transaction, NOT a restock. Extract the name into 'customerName'.
+         - Only treat "bought" or "paid for" as a restock inventory entry if the merchant implies THEY ("I") bought it to replenish the shop (e.g., "I bought 3 bags of rice to sell", "I buy market").
+      2. AMOUNT FALLBACK: If an amount is mangled or has typos like "500nra" or "500sad nara", recognize it as the currency amount and extract it cleanly as "500.00".
+
+      2. Currency/Amount parsing:
+         - Extract amounts cleanly. "5k" is "5000.00", "20 thousand" is "20000.00".
+         - Always return numbers as a string with exactly two decimal places to protect precision.
+      3. If fields are missing, return null.
+      4. Formulate the itemName intelligently:
+        - Extract the base item name as a singular noun without plurals or quantities (e.g., 'bags of rice' becomes 'rice', 'crates of egg' becomes 'egg').
+        - If a unit of measurement is mentioned (like bag, crate, carton, cup), append it in parentheses to the base item name.
+         - Examples: 
+           "two bags of rice" -> itemName: "rice (bag)", quantity: 2
+           "three cups of rice" -> itemName: "rice (cup)", quantity: 3
+           "one crate of egg" -> itemName: "egg (crate)", quantity: 1
+           "5 pieces of egg or 5 eggs" -> itemName: "egg (piece)", quantity: 5
+
+      STRICT JSON FORMAT OUTPUT ONLY. No conversational filler, no markdown wrappers like \`\`\`json.
+      {
+        "intent": "transaction" | "inventory" | "unknown",
+        "type": "sale" | "debt" | "repayment" | "expense" | "restock" | "unknown",
+        "customerName": "String or null",
+        "itemName": "String or null",
+        "quantity": integer or null,
+        "amount": "string decimal" or "0.00"
+      }
+    `
+
+    try {
+      const response = await this.groq.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: `Parse this transcript: "${text}"` },
+        ],
+        response_format: {
+          type: 'json_object',
+          /*
+          type: 'json_schema',
+          json_schema: {
+            name: 'ledger_extraction',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                intent: {
+                  type: 'string',
+                  enum: ['transaction', 'inventory', 'unknown'],
+                },
+                type: {
+                  type: 'string',
+                  enum: ['sale', 'debt', 'expense', 'restock', 'unknown'],
+                },
+                customerName: {
+                  type: ['string', 'null'],
+                },
+                itemName: {
+                  type: ['string', 'null'],
+                },
+                quantity: {
+                  type: ['integer', 'null'],
+                },
+                amount: {
+                  type: 'string',
+                  description:
+                    'The financial value formatted as a decimal string with 2 decimal places, e.g., "45000.00"',
+                },
+              },
+              required: ['intent', 'type', 'customerName', 'itemName', 'quantity', 'amount'],
+              additionalProperties: false,
+            },
+          },
+          */
+        },
+        temperature: 0.1, // Keep it low for predictable data parsing
+      })
+
+      const content = response.choices[0].message.content
+      if (!content) {
+        const errorMessage = 'Groq returned an empty response payload.'
+
+        this.logger.error(`BaseAIService.extractBusinessMetrics] ${errorMessage}`)
+
+        throw new Error(errorMessage)
+      }
+
+      const metrics = JSON.parse(content)
+
+      this.logger.info(
+        { metrics },
+        '[BaseAIService.extractBusinessMetrics] Business metrics extraction successful.'
+      )
+
+      return metrics
+    } catch (error) {
+      this.logger.error(
+        { err: error },
+        'BaseAIService.extractBusinessMetrics] Business metrics extraction failed.'
+      )
+      throw error
+    }
+  }
+}

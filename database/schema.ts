@@ -7,19 +7,120 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
-export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
-  $columns = UserSchema.$columns
+export class CustomerSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'name', 'updatedAt', 'userId'] as const
+  $columns = CustomerSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: number
+}
+
+export class DebtSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'customerId', 'dueDate', 'id', 'itemName', 'productId', 'quantity', 'status', 'totalPaid', 'updatedAt', 'userId'] as const
+  $columns = DebtSchema.$columns
+  @column()
+  declare amount: number
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
-  declare email: string
-  @column()
-  declare fullName: string | null
+  declare customerId: number | null
+  @column.dateTime()
+  declare dueDate: DateTime | null
   @column({ isPrimary: true })
   declare id: number
-  @column({ serializeAs: null })
-  declare password: string
+  @column()
+  declare itemName: string | null
+  @column()
+  declare productId: number | null
+  @column()
+  declare quantity: number | null
+  @column()
+  declare status: string
+  @column()
+  declare totalPaid: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
+  declare updatedAt: DateTime
+  @column()
+  declare userId: number
+}
+
+export class ProductInventoryLogSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'id', 'notes', 'productId', 'quantityChangeType', 'quantityChanged', 'updatedAt'] as const
+  $columns = ProductInventoryLogSchema.$columns
+  @column()
+  declare amount: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare notes: string | null
+  @column()
+  declare productId: number
+  @column()
+  declare quantityChangeType: string
+  @column()
+  declare quantityChanged: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class ProductSchema extends BaseModel {
+  static $columns = ['createdAt', 'currentStock', 'id', 'name', 'updatedAt', 'userId'] as const
+  $columns = ProductSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currentStock: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: number
+}
+
+export class TransactionSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'id', 'itemName', 'quantity', 'type', 'updatedAt', 'userId'] as const
+  $columns = TransactionSchema.$columns
+  @column()
+  declare amount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare itemName: string
+  @column()
+  declare quantity: number | null
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: number
+}
+
+export class UserSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'phoneNumber', 'profileName', 'updatedAt'] as const
+  $columns = UserSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare phoneNumber: string
+  @column()
+  declare profileName: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }

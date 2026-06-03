@@ -59,8 +59,15 @@ export default class MediaService extends BaseService {
       const contentLength = headResponse.headers.get('content-length')
 
       if (contentLength) {
+        this.logger.info(
+          { contentLength },
+
+          '[MediaService.checkSize] HEAD request successfully returned content length.'
+        )
         return Number.parseInt(contentLength, 10)
       }
+
+      this.logger.warn('[MediaService.checkSize] HEAD request did not return content length.')
 
       return null
     } catch (error) {
