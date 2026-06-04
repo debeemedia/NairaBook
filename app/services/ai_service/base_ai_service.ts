@@ -6,7 +6,17 @@ import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import LedgerService from '#services/ledger_service'
 
 export default abstract class BaseAIService extends BaseService {
-  public async processVoiceNote({ mediaUrl, userId }: { mediaUrl: string; userId: number }) {
+  public async processVoiceNote({
+    mediaUrl,
+    userId,
+    targetMerchantWhatsappNumber,
+    appSenderWhatsappNumber,
+  }: {
+    mediaUrl: string
+    userId: number
+    targetMerchantWhatsappNumber: string
+    appSenderWhatsappNumber: string
+  }) {
     const downloadedBuffer = await MediaService.download(mediaUrl)
 
     const text = await this.transcribeAudio(downloadedBuffer)
@@ -18,45 +28,47 @@ export default abstract class BaseAIService extends BaseService {
 
     const metrics = await this.extractBusinessMetrics(text)
 
+    let messageBody = ''
+
     if (metrics.intent === 'unknown') {
       this.logger.warn(
         { userId, metrics },
         '[BaseAIService.processVoiceNote] Could not resolve intent from transcript.'
       )
 
-      return
-      /**
-       * @todo: Send a WhatsApp reply back saying "I didn't quite catch that business action"
-       */
+      messageBody = `Boss! I didn't quite catch that business action. Can you be more specific?`
     }
 
     try {
-      // Handle Transactions: sales & expenses
+      let result: string | void | null = null
+
       if (
         metrics.intent === 'transaction' &&
         (metrics.type === 'sale' || metrics.type === 'expense')
       ) {
-        return await LedgerService.handleTransaction({ metrics, userId })
+        // Handle Transactions: sales & expenses
+        result = await LedgerService.handleTransaction({ metrics, userId })
+        //
+      } else if (metrics.type === 'debt') {
+        // Handle Debts: customer credit
+        result = await LedgerService.handleDebt({ metrics, userId })
+        //
+      } else if (metrics.type === 'repayment') {
+        // Handle Debt Repayment: partial or full
+        result = await LedgerService.handleDebtRepayment({ metrics, userId })
+        //
+      } else if (metrics.intent === 'inventory' || metrics.type === 'restock') {
+        // Handle Inventory: restocking products
+        result = await LedgerService.handleProductInventory({ metrics, userId })
       }
 
-      // Handle Debts: customer credit
-      if (metrics.type === 'debt') {
-        return await LedgerService.handleDebt({ metrics, userId })
+      if (typeof result === 'string') {
+        messageBody = result
+        //
+      } else {
+        messageBody = `Business action recorded, my boss!. Intent is ${metrics.intent}, type is ${metrics.type}, ${metrics.customerName ? `customer is ${metrics.customerName}, ` : ''}${metrics.itemName ? `item is ${metrics.itemName}, ` : ''}${metrics.quantity ? `quantity is ${metrics.quantity}, ` : ''}amount is ₦${metrics.amount}.`
+        //
       }
-
-      // Handle Debt Repayment: partial or full
-      if (metrics.type === 'repayment') {
-        return await LedgerService.handleDebtRepayment({ metrics, userId })
-      }
-
-      // Handle Inventory: restocking products
-      if (metrics.intent === 'inventory' || metrics.type === 'restock') {
-        return await LedgerService.handleProductInventory({ metrics, userId })
-      }
-
-      /**
-       * @todo: Send a message of acknowledgement
-       */
     } catch (error) {
       this.logger.error(
         { err: error, metrics },
@@ -65,6 +77,12 @@ export default abstract class BaseAIService extends BaseService {
 
       throw error
     }
+
+    return await MediaService.sendWhatsAppMessage({
+      from: appSenderWhatsappNumber,
+      to: targetMerchantWhatsappNumber,
+      messageBody,
+    })
   }
 
   protected abstract transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>

@@ -2,8 +2,12 @@ import env from '#start/env'
 import BaseService from './base_service.ts'
 
 export default class MediaService extends BaseService {
+  static get #accountSid() {
+    return env.get('TWILIO_ACCOUNT_SID')
+  }
+
   static get #authorizationHeader() {
-    return `Basic ${Buffer.from(`${env.get('TWILIO_ACCOUNT_SID')}:${env.get('TWILIO_AUTH_TOKEN')}`).toString('base64')}`
+    return `Basic ${Buffer.from(`${this.#accountSid}:${env.get('TWILIO_AUTH_TOKEN')}`).toString('base64')}`
   }
 
   public static async download(mediaUrl: string) {
@@ -74,6 +78,47 @@ export default class MediaService extends BaseService {
       this.logger.error({ err: error }, '[MediaService.checkSize] Failed to read media headers.')
 
       return null
+    }
+  }
+
+  public static async sendWhatsAppMessage({
+    from,
+    to,
+    messageBody,
+  }: {
+    from: string
+    to: string
+    messageBody: string
+  }) {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${this.#accountSid}/Messages.json`
+
+    const formData = new URLSearchParams()
+    formData.append('To', to)
+    formData.append('From', from)
+    formData.append('Body', messageBody)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': this.#authorizationHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Twilio API Error: ${response.status} - ${await response.text()}`)
+      }
+
+      return true
+    } catch (error) {
+      this.logger.error(
+        { err: error },
+        `[Media Service.sendWhatsAppMessage] Failed to dispatch message.`
+      )
+
+      return false
     }
   }
 }

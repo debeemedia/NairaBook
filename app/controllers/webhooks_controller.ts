@@ -69,7 +69,7 @@ export default class WebhooksController {
       }
     }
 
-    const senderPhone = payload.WaId
+    const senderPhone = payload.WaId // e.g., "+23481........"
 
     const user = await User.firstOrCreate(
       { phoneNumber: senderPhone },
@@ -82,13 +82,23 @@ export default class WebhooksController {
       }
     )
 
+    const targetMerchantWhatsappNumber = payload.From // e.g., "whatsapp:+23481........"
+    const appSenderWhatsappNumber = payload.To // e.g., "whatsapp:+14155238886"
+
     /**
      * @todo: Use a queue for this later.
      */
     // Don't await this call so that the 200 response is sent to Twilio immediately.
-    aiService.processVoiceNote({ mediaUrl, userId: user.id }).catch(() => {
-      // Appropriate logs are in the service.
-    })
+    aiService
+      .processVoiceNote({
+        mediaUrl,
+        userId: user.id,
+        targetMerchantWhatsappNumber,
+        appSenderWhatsappNumber,
+      })
+      .catch(() => {
+        // Appropriate logs are in the service.
+      })
 
     return response.ok({})
   }

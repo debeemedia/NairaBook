@@ -19,7 +19,10 @@ export default class extends BaseSchema {
 
       table.string('name').notNullable().unique().index() // e.g. "egg (crate)" or "flour (cup) or "flour (bag)"
 
-      table.integer('current_stock').defaultTo(0).notNullable()
+      table
+        .decimal('current_stock', 12, 2)
+        .defaultTo(0.0)
+        .notNullable() /** IMPORTANT: Leave as unsigned. User might forget to record a product stock update and later record an action which reduces the product stock, putting the stock in the negative*/
 
       table.timestamp('created_at', { useTz: true }).notNullable().index()
       table.timestamp('updated_at', { useTz: true }).notNullable().index()

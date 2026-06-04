@@ -17,7 +17,7 @@ export default class extends BaseSchema {
         .onUpdate('CASCADE')
         .onDelete('CASCADE')
 
-      table.integer('quantity_changed').defaultTo(1).notNullable()
+      table.decimal('quantity_changed', 12, 2).defaultTo(1.0).notNullable()
 
       table.enum('quantity_change_type', ['addition', 'subtraction']).notNullable()
 

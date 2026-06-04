@@ -38,27 +38,45 @@ export default class LedgerService extends BaseService {
         transaction.type === TransactionTypesEnum.Sale && normalizedItemName
 
       if (isProductInventoryUpdated) {
-        product = await Product.findBy({ name: normalizedItemName }, { client: trx })
+        const removedQuantity = Number(transaction.quantity) ?? 1
 
-        if (product) {
-          const removedQuantity = Number(transaction.quantity) ?? 1
+        // Find or create the product on the fly with 0 initial stock
+        product = await Product.firstOrCreate(
+          { name: normalizedItemName },
+          {
+            name: normalizedItemName,
+            userId,
+            currentStock: 0, // Starts at 0 if it's brand new
+          },
+          { client: trx }
+        )
 
-          await product
-            .useTransaction(trx)
-            .merge({ currentStock: (product.currentStock -= removedQuantity) })
-            .save()
+        await product
+          .useTransaction(trx)
+          .merge({
+            currentStock:
+              Number(product.currentStock) -
+              removedQuantity /**This might push stock into negative */,
 
-          productInventoryLog = await ProductInventoryLog.create(
-            {
-              productId: product.id,
-              quantityChanged: removedQuantity,
-              amount: transaction.amount,
-              quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Subtraction,
-              notes: 'Product stock reduced via sale transaction.',
-            },
-            { client: trx }
-          )
-        }
+            /**
+             * @todo: If stock is negative, send a WhatsApp message or display a dashboard message for the user to update stock inventory.
+             * Or simply return a flag from this method and use it to append a text ---
+             * "\n\n *P.S.* Your stock for *${metrics.itemName}* is currently low (${result.currentStock}). Text me "Restock [item]" whenever you buy more!" ---
+             * to the final message sent in `processVoiceNote`.
+             */
+          })
+          .save()
+
+        productInventoryLog = await ProductInventoryLog.create(
+          {
+            productId: product.id,
+            quantityChanged: removedQuantity,
+            amount: transaction.amount,
+            quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Subtraction,
+            notes: 'Product stock reduced via sale transaction.',
+          },
+          { client: trx }
+        )
       }
 
       this.logger.info(
@@ -82,21 +100,23 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
+    const returnMessage = 'Boss, you seem to be recording a debt but you did not mention the'
     if (!metrics.customerName?.trim()) {
-      return this.logger.warn(
+      this.logger.warn(
         { userId, metrics },
         '[LedgerService.handleDebt] Received debt without a customerName. Aborting.'
       )
+
+      return returnMessage + ` customer's name.`
     }
-    if (!metrics.amount?.trim()) {
-      return this.logger.warn(
+    if (!metrics.amount?.trim() || metrics.amount.trim() === '0.00') {
+      this.logger.warn(
         { userId, metrics },
         '[LedgerService.handleDebt] Received debt without an amount. Aborting.'
       )
+
+      return returnMessage + ` amount.`
     }
-    /**
-     * @todo: Send a whatsapp response for the above??
-     */
 
     const normalizedItemName = metrics.itemName ? metrics.itemName.toLowerCase().trim() : null
 
@@ -115,25 +135,36 @@ export default class LedgerService extends BaseService {
       let productInventoryLog: ProductInventoryLog | null = null
 
       if (normalizedItemName) {
-        product = await Product.findBy({ name: normalizedItemName }, { client: trx })
+        // Find or create the product on the fly with 0 initial stock
+        product = await Product.firstOrCreate(
+          { name: normalizedItemName },
+          {
+            name: normalizedItemName,
+            userId,
+            currentStock: 0, // Starts at 0 if it's brand new
+          },
+          { client: trx }
+        )
 
-        if (product) {
-          await product
-            .useTransaction(trx)
-            .merge({ currentStock: (product.currentStock -= removedQuantity) })
-            .save()
+        await product
+          .useTransaction(trx)
+          .merge({
+            currentStock:
+              Number(product.currentStock) -
+              removedQuantity /**This might push stock into negative */,
+          })
+          .save()
 
-          productInventoryLog = await ProductInventoryLog.create(
-            {
-              productId: product.id,
-              quantityChanged: removedQuantity,
-              amount: parseFloat(metrics.amount),
-              quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Subtraction,
-              notes: 'Product stock reduced via customer credit.',
-            },
-            { client: trx }
-          )
-        }
+        productInventoryLog = await ProductInventoryLog.create(
+          {
+            productId: product.id,
+            quantityChanged: removedQuantity,
+            amount: parseFloat(metrics.amount),
+            quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Subtraction,
+            notes: 'Product stock reduced via customer credit.',
+          },
+          { client: trx }
+        )
       }
 
       const debt = await Debt.create(
@@ -145,7 +176,8 @@ export default class LedgerService extends BaseService {
           quantity: removedQuantity,
           productId: product?.id ?? null,
           // Db defaults for status (unpaid) and total_paid (0.00)
-          // dueDate /** @todo */
+          /** @todo */
+          // dueDate
         },
         { client: trx }
       )
@@ -173,17 +205,24 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
+    const returnMessage =
+      'Boss, you seem to be recording a debt repayment but you did not mention the'
+
     if (!metrics.customerName?.trim()) {
-      return this.logger.warn(
+      this.logger.warn(
         { userId, metrics },
         '[LedgerService.handleDebtRepayment] Received debt repayment without a customerName. Aborting.'
       )
+
+      return returnMessage + ` customer's name.`
     }
-    if (!metrics.amount?.trim()) {
-      return this.logger.warn(
+    if (!metrics.amount?.trim() || metrics.amount.trim() === '0.00') {
+      this.logger.warn(
         { userId, metrics },
         '[LedgerService.handleDebtRepayment] Received debt repayment without an amount. Aborting.'
       )
+
+      return returnMessage + ' amount.'
     }
 
     const normalizedCustomerName = metrics.customerName!.toUpperCase().trim()
@@ -191,19 +230,22 @@ export default class LedgerService extends BaseService {
     const customer = await Customer.query().where({ userId, name: normalizedCustomerName }).first()
 
     if (!customer) {
-      return this.logger.warn(
+      this.logger.warn(
         { userId, metrics },
         `[LedgerService.handleDebtRepayment] Received debt repayment for non-existent customer.`
       )
+
+      return `Boss, I can't find this customer in our records.`
     }
 
-    // Fetch all active (unpaid/partial) debts for the customer, oldest first (FIFO)
-    const activeDebts = await Debt.query()
-      .where({ userId, customerId: customer.id })
-      .whereIn('status', [DebtStatusesEnum.Unpaid, DebtStatusesEnum.PartiallyPaid])
-      .orderBy('createdAt', 'asc')
-
     await db.transaction(async (trx) => {
+      // Fetch all active (unpaid/partial) debts for the customer, oldest first (FIFO)
+      const activeDebts = await Debt.query({ client: trx })
+        .where({ userId, customerId: customer.id })
+        .whereIn('status', [DebtStatusesEnum.Unpaid, DebtStatusesEnum.PartiallyPaid])
+        .orderBy('createdAt', 'asc')
+        .forUpdate() // Lock rows to prevent race conditions
+
       let repaymentAmount = parseFloat(metrics.amount)
 
       const debtsUpdated: Array<{
@@ -300,10 +342,12 @@ export default class LedgerService extends BaseService {
     userId: number
   }) {
     if (!metrics.itemName?.trim()) {
-      return this.logger.warn(
+      this.logger.warn(
         { userId, metrics },
-        '[LedgerService.handleInventory] Received restock intent without an itemName. Aborting.'
+        '[LedgerService.handleInventory] Received inventory without an itemName. Aborting.'
       )
+
+      return `Boss, you seem to be recording a product inventory but you did not mention the item.`
     }
 
     const normalizedItemName = metrics.itemName.toLowerCase().trim()
@@ -318,8 +362,8 @@ export default class LedgerService extends BaseService {
       const addedQuantity =
         // The LLM may return this as a string
         (typeof metrics.quantity === 'string'
-          ? Number.parseInt(metrics.quantity, 10)
-          : metrics.quantity) || 1
+          ? Number.parseFloat(metrics.quantity)
+          : Number(metrics.quantity)) || 1
 
       await product
         .useTransaction(trx)
