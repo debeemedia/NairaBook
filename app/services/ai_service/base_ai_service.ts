@@ -28,16 +28,20 @@ export default abstract class BaseAIService extends BaseService {
 
     const metrics = await this.extractBusinessMetrics(text)
 
-    let messageBody = ''
-
     if (metrics.intent === 'unknown') {
       this.logger.warn(
         { userId, metrics },
         '[BaseAIService.processVoiceNote] Could not resolve intent from transcript.'
       )
 
-      messageBody = `Boss! I didn't quite catch that business action. Can you be more specific?`
+      return await MediaService.sendWhatsAppMessage({
+        from: appSenderWhatsappNumber,
+        to: targetMerchantWhatsappNumber,
+        messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
+      })
     }
+
+    let messageBody = ''
 
     try {
       let result: string | void | null = null
