@@ -1,3 +1,4 @@
+import DashboardService from '#services/dashboard_service'
 import env from '#start/env'
 import BaseService from './base_service.ts'
 
@@ -85,11 +86,24 @@ export default class MediaService extends BaseService {
     from,
     to,
     messageBody,
+    withDashboardLink,
+    userId,
   }: {
     from: string
     to: string
     messageBody: string
+    withDashboardLink?: boolean
+    userId?: string | number
   }) {
+    if (withDashboardLink) {
+      if (!userId) {
+        throw new Error(
+          'MediaService.[sendWhatsAppMessage] `userId` is required to generate dashboard link.'
+        )
+      }
+      messageBody += `\n\n🔗 *VIEW DASHBOARD:*\n${await DashboardService.generateDashboardLink({ userId })}`
+    }
+
     const url = `https://api.twilio.com/2010-04-01/Accounts/${this.#accountSid}/Messages.json`
 
     const formData = new URLSearchParams()

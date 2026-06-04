@@ -31,3 +31,6 @@ router
 
 // Route to handle webhook from whatsapp
 router.post('webhooks/whatsapp', [controllers.Webhooks, 'handleWhatsApp'])
+
+// Route to display dashboard
+router.get('dashboard', [controllers.Dashboard, 'create'])

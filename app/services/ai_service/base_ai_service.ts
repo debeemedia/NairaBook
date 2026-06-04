@@ -38,6 +38,8 @@ export default abstract class BaseAIService extends BaseService {
         from: appSenderWhatsappNumber,
         to: targetMerchantWhatsappNumber,
         messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
+        withDashboardLink: true,
+        userId
       })
     }
 
@@ -86,6 +88,8 @@ export default abstract class BaseAIService extends BaseService {
       from: appSenderWhatsappNumber,
       to: targetMerchantWhatsappNumber,
       messageBody,
+      withDashboardLink: true,
+      userId
     })
   }
 

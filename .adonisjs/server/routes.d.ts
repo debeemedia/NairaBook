@@ -11,16 +11,19 @@ export type ScannedRoutes = {
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
     'webhooks.handle_whats_app': { paramsTuple?: []; params?: {} }
+    'dashboard.create': { paramsTuple?: []; params?: {} }
   }
   GET: {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
+    'dashboard.create': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
+    'dashboard.create': { paramsTuple?: []; params?: {} }
   }
   POST: {
     'new_account.store': { paramsTuple?: []; params?: {} }
