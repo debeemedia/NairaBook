@@ -2,6 +2,7 @@ import env from '#start/env'
 import BaseService from './base_service.ts'
 import redis from '@adonisjs/redis/services/main'
 import string from '@adonisjs/core/helpers/string'
+import router from '@adonisjs/core/services/router'
 
 export default class DashboardService extends BaseService {
   static get #cacheKeyPrefix() {
@@ -14,13 +15,22 @@ export default class DashboardService extends BaseService {
     await redis.setex(`${this.#cacheKeyPrefix}:${shortCode}`, 86400 /** 24h */, userId.toString())
 
     this.logger.info(
-      { userId, shortCode },
+      { shortCode },
       '[DashboardService.generateDashboardLink] Short code set for user.'
     )
 
-    const appUrl = env.get('APP_URL')
+    const dashboardLink = router.urlBuilder.urlFor(
+      'dashboard.show',
+      { shortCode },
+      { prefixUrl: env.get('APP_URL') }
+    )
 
-    return `${appUrl}/d/${shortCode}`
+    this.logger.info(
+      { shortCode, dashboardLink },
+      '[DashboardService.generateDashboardLink] Link generated.'
+    )
+
+    return dashboardLink
   }
 
   public static async getUserFromDashboardLink({ shortCode }: { shortCode: string }) {
@@ -47,13 +57,11 @@ export default class DashboardService extends BaseService {
       }
     }
 
-    const userId = Number.parseInt(userIdStr, 10)
-
     this.logger.info(
-      { shortCode, userId },
+      { shortCode },
       '[DashboardService.getUserFromDashboardLink] Dashboard link successfully decoded.'
     )
 
-    return userId
+    return Number.parseInt(userIdStr, 10)
   }
 }
