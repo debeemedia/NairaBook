@@ -3,15 +3,15 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 export default class DashboardController {
   async create({ view, response, request }: HttpContext) {
-    const secureToken = request.input('token')
+    const result = await DashboardService.getUserFromDashboardLink({
+      shortCode: request.param('shortCode'),
+    })
 
-    const decryptedPayload = await DashboardService.decodeDashboardLink({ secureToken })
-
-    if (typeof decryptedPayload === 'string') {
-      return response.forbidden(decryptedPayload)
+    if (typeof result !== 'number') {
+      return response.status(result.code).send(result.message)
     }
 
-    const userId = decryptedPayload.userId
+    const userId = result
 
     /**
      * @todo: Queries here

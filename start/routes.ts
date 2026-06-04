@@ -33,4 +33,4 @@ router
 router.post('webhooks/whatsapp', [controllers.Webhooks, 'handleWhatsApp'])
 
 // Route to display dashboard
-router.get('dashboard', [controllers.Dashboard, 'create'])
+router.get('d/:shortCode', [controllers.Dashboard, 'create'])

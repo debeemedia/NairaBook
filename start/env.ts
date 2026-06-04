@@ -30,4 +30,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   AI_SERVICE_PROVIDER: Env.schema.enum(['aethex', 'groq']),
   GROQ_API_KEY: Env.schema.string(),
   AETHEX_API_KEY: Env.schema.string(),
+
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.secret.optional(),
 })

@@ -1,83 +1,59 @@
 import env from '#start/env'
-import encryption from '@adonisjs/core/services/encryption'
 import BaseService from './base_service.ts'
+import redis from '@adonisjs/redis/services/main'
+import string from '@adonisjs/core/helpers/string'
 
 export default class DashboardService extends BaseService {
-  public static async generateDashboardLink({ userId }: { userId: string | number }) {
-    const payload = { userId, timestamp: Date.now() }
+  static get #cacheKeyPrefix() {
+    return `short`
+  }
 
-    const secureToken = encryption.encrypt(payload, '24h')
+  public static async generateDashboardLink({ userId }: { userId: string | number }) {
+    const shortCode = string.random(6)
+
+    await redis.setex(`${this.#cacheKeyPrefix}:${shortCode}`, 86400 /** 24h */, userId.toString())
+
+    this.logger.info(
+      { userId, shortCode },
+      '[DashboardService.generateDashboardLink] Short code set for user.'
+    )
 
     const appUrl = env.get('APP_URL')
 
-    // Shorten the URL
-    return await this.#shortenUrl(`${appUrl}/dashboard?token=${encodeURIComponent(secureToken)}`)
+    return `${appUrl}/d/${shortCode}`
   }
 
-  static async #shortenUrl(longUrl: string) {
-    try {
-      const response = await fetch(
-        `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`,
-        {
-          signal: AbortSignal.timeout(5000), // Don't let a hanging upstream server block the app
-        }
-      )
-
-      if (response.ok) {
-        const shortUrl = await response.text() // e.g.https://tinyurl.com/267v7cf5
-
-        this.logger.info(
-          { shortUrl, longUrl },
-          '[DashboardService.#shortenUrl] URL successfully shortened.'
-        )
-
-        return shortUrl
-      }
-
+  public static async getUserFromDashboardLink({ shortCode }: { shortCode: string }) {
+    if (!shortCode) {
       this.logger.warn(
-        { status: response.status, statusText: response.statusText },
-        '[DashboardService.#shortenUrl] Failed to shorten URL. Returning long URL.'
+        '[DashboardService.getUserFromDashboardLink] No short code in dashboard link.'
       )
 
-      return longUrl
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        this.logger.warn(`[DashboardService.#shortenUrl] Request timed out. Returning long URL.`)
-      } else {
-        this.logger.error(
-          { err: error },
-          '[DashboardService.#shortenUrl] Failed to shorten URL. Returning long URL.'
-        )
-      }
-
-      return longUrl
-    }
-  }
-
-  public static async decodeDashboardLink({ secureToken }: { secureToken: string }) {
-    if (!secureToken) {
-      this.logger.warn('[DashboardService.decodeDashboardLink] No secure token in dashboard link!')
-
-      return 'Missing secure access token. Please open the link from your WhatsApp message.'
+      return { code: 400, message: 'Invalid link format.' }
     }
 
-    const decryptedPayload = encryption.decrypt<{ userId: string | number; timestamp: number }>(
-      secureToken
-    )
+    const userIdStr = await redis.get(`${this.#cacheKeyPrefix}:${shortCode}`)
 
-    if (!decryptedPayload) {
+    if (!userIdStr) {
       this.logger.warn(
-        '[DashboardService.decodeDashboardLink] Token in dashboard link has expired or been tampered with!'
+        { shortCode },
+        '[DashboardService.getUserFromDashboardLink] Short code in dashboard link has expired or been tampered with!'
       )
 
-      return 'This dashboard link has expired or is invalid. Send a new voice note to get an updated link, boss!'
+      return {
+        code: 403,
+        message:
+          'This dashboard link has expired or is invalid. Send a new voice note to get an updated link, boss!',
+      }
     }
+
+    const userId = Number.parseInt(userIdStr, 10)
 
     this.logger.info(
-      { decryptedPayload },
-      '[DashboardService.decodeDashboardLink] Dashboard link successfully decoded.'
+      { shortCode, userId },
+      '[DashboardService.getUserFromDashboardLink] Dashboard link successfully decoded.'
     )
 
-    return decryptedPayload
+    return userId
   }
 }
