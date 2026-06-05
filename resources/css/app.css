@@ -1,4 +1,284 @@
+/* ----------------- */
+/* NairaBook styles */
+/* ----------------- */
 :root {
+  --clr-emerald: #059669;
+  --clr-emerald-light: #ecfdf5;
+  --clr-rose: #e11d48;
+  --clr-rose-light: #fff1f2;
+  --clr-amber: #d97706;
+  --clr-amber-light: #fef3c7;
+  --clr-slate-900: #0f172a;
+  --clr-slate-600: #475569;
+  --clr-slate-400: #94a3b8;
+  --clr-slate-100: #f1f5f9;
+}
+
+/* Global Responsive Fix for Starter Template layout */
+@media (max-width: 640px) {
+  main {
+    margin: 0 10px !important; /* Reduce large fixed side margins on tight phone screens */
+  }
+}
+
+/* Base Dashboard Container */
+.dashboard-wrapper {
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  .dashboard-wrapper {
+    padding: 30px;
+  }
+}
+
+/* Dashboard Navigation Header block */
+.dashboard-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--clr-slate-100);
+  padding-bottom: 20px;
+  margin-bottom: 25px;
+}
+@media (min-width: 640px) {
+  .dashboard-header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.header-title-block h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--clr-slate-900);
+  letter-spacing: -0.5px;
+}
+.header-subtext {
+  font-size: 13px;
+  color: var(--clr-slate-400);
+  margin-top: 4px;
+}
+.status-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 50px;
+  background-color: var(--clr-emerald-light);
+  color: var(--clr-emerald);
+  white-space: nowrap;
+}
+
+/* Responsive Grid System (Mobile First) */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 1 column on small devices */
+  gap: 15px;
+  margin-bottom: 30px;
+}
+@media (min-width: 480px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  } /* 2 columns on tablets */
+}
+@media (min-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  } /* 4 columns on laptops */
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid var(--clr-slate-100);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+.metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--clr-slate-400);
+  letter-spacing: 0.5px;
+}
+.metric-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--clr-slate-900);
+  margin-top: 10px;
+  letter-spacing: -0.5px;
+}
+@media (min-width: 768px) {
+  .metric-value {
+    font-size: 28px;
+  }
+}
+
+/* Metric Colors mappings */
+.val-sales {
+  color: var(--clr-emerald);
+}
+.val-debt {
+  color: var(--clr-amber);
+}
+.val-expenses {
+  color: var(--clr-rose);
+}
+.val-profit-pos {
+  color: var(--clr-emerald);
+}
+.val-profit-neg {
+  color: var(--clr-rose);
+}
+
+/* Operational Insights Lower Splitter Layout */
+.insights-section {
+  display: grid;
+  grid-template-columns: 1fr; /* Stack layout on mobile phones */
+  gap: 25px;
+}
+@media (min-width: 1024px) {
+  .insights-section {
+    grid-template-columns: 2fr 1fr;
+  } /* 2/3 and 1/3 split on desktop view */
+}
+
+.panel-block {
+  background: #ffffff;
+  border: 1px solid var(--clr-slate-100);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+.panel-header {
+  padding: 18px 20px;
+  background-color: #fafafa;
+  border-b: 1px solid var(--clr-slate-100);
+}
+.panel-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--clr-slate-900);
+}
+
+/* Horizontal Responsive Scroll Container for Tables */
+.ledger-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+  min-width: 500px; /* Ensures the table elements maintain structured visibility when scrolled on small viewports */
+}
+.ledger-table th {
+  background-color: var(--clr-slate-100);
+  color: var(--clr-slate-600);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 20px;
+}
+.ledger-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--clr-slate-100);
+}
+.ledger-table tr:hover td {
+  background-color: #fafafa;
+}
+
+.item-name {
+  font-weight: 600;
+  color: var(--clr-slate-900);
+  text-transform: capitalize;
+}
+.item-time {
+  font-size: 12px;
+  color: var(--clr-slate-400);
+  margin-top: 2px;
+}
+.item-amount {
+  font-weight: 700;
+  text-align: right;
+  color: var(--clr-slate-900);
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.badge-sale {
+  background-color: var(--clr-emerald-light);
+  color: var(--clr-emerald);
+}
+.badge-expense {
+  background-color: var(--clr-rose-light);
+  color: var(--clr-rose);
+}
+
+/* Inventory Alert Side Component Items */
+.alert-list {
+  padding: 15px;
+}
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--clr-rose-light);
+  border: 1px solid #ffe4e6;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+.alert-item:last-child {
+  margin-bottom: 0;
+}
+.alert-product-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clr-slate-900);
+  text-transform: capitalize;
+}
+.alert-product-sub {
+  font-size: 11px;
+  color: var(--clr-rose);
+  font-weight: 500;
+  margin-top: 2px;
+}
+.alert-counter {
+  background-color: var(--clr-rose);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--clr-slate-400);
+  font-size: 13px;
+}
+
+/* --------------------------- */
+/* Default scaffolded styles */
+/* -------------------------- */
+
+/* :root {
   --gray-1: oklch(98.5% 0 0);
   --gray-2: oklch(97% 0 0);
   --gray-3: oklch(92.2% 0 0);
@@ -43,10 +323,10 @@ h4,
 h5,
 h6 {
   color: var(--gray-12);
-}
+} */
 
 /* Header */
-header {
+/* header {
   max-width: 1440px;
   margin: auto;
   padding: 0 30px;
@@ -69,10 +349,10 @@ header nav a {
 header nav a:hover,
 header nav a.current {
   color: var(--gray-12);
-}
+} */
 
 /* Main */
-main {
+/* main {
   max-width: 1440px;
   margin: 0 30px;
   display: flex;
@@ -81,8 +361,9 @@ main {
   min-height: calc(100vh - 65px);
   background: #fff;
   border: 1px solid var(--gray-3);
-}
+} */
 
+/* Leave this enableed for the default home page. */
 .hero {
   padding: 100px 50px;
   max-width: 880px;
@@ -104,7 +385,7 @@ main {
   padding: 10px 16px;
 }
 
-.cards {
+/* .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding: 0 50px;
@@ -128,10 +409,10 @@ main {
 }
 .cards p {
   color: var(--gray-6);
-}
+} */
 
 /* Form */
-.form-container {
+/* .form-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -192,10 +473,10 @@ button {
 }
 button:hover {
   background: var(--gray-10);
-}
+} */
 
 /* Alerts */
-.alert {
+/* .alert {
   background: #fff;
   position: relative;
   padding: 12px 16px;
@@ -233,4 +514,4 @@ button:hover {
   to {
     transform: scale(1);
   }
-}
+} */
