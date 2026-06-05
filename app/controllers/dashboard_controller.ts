@@ -2,10 +2,11 @@ import DashboardService from '#services/dashboard_service'
 import type { HttpContext } from '@adonisjs/core/http'
 import Debt, { DebtStatusesEnum } from '#models/debt'
 import Product from '#models/product'
-import Transaction, { TransactionTypesEnum } from '#models/transaction'
+import Transaction, { transactionTypes, TransactionTypesEnum } from '#models/transaction'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import User from '#models/user'
+import vine, { errors } from '@vinejs/vine'
 
 /**
  * @todo: Convert all queries to raw SQL queries.
@@ -38,15 +39,36 @@ export default class DashboardController {
       )
     }
 
-    /**
-     * @todo: Validate querystrings
-     */
+    let payload
 
-    // Capture timeframe range and current pagination state
-    const currentRange = request.input('range', '1wk')
-    const currentType = request.input('type', 'all')
-    const page = Number(request.input('page', 1)) || 1
-    let rangeStart: DateTime<boolean> = DateTime.local().minus({ days: 7 })
+    try {
+      payload = await vine
+        .create({
+          range: vine.enum(['24h', '1mo', '1wk', 'all']).optional(),
+          type: vine.enum([...transactionTypes, 'all']).optional(),
+          page: vine.number().optional(),
+          export: vine.enum(['transaction_ledger']).optional(),
+        })
+        .validate(request.qs())
+    } catch (error) {
+      // If validation fails, intercept the redirect and print the raw errors to the screen
+      /**
+       * @todo: Later on, flash the errors to the template and handle there.
+       */
+      if (error instanceof errors.E_VALIDATION_ERROR) {
+        return response.status(422).send({
+          message: 'Stop the manipulation, boss!',
+          errors: error.messages,
+        })
+      }
+
+      throw error
+    }
+
+    const currentRange = payload.range || '1wk'
+    const currentType = payload.type || 'all'
+    const page = payload.page || 1
+    let rangeStart: DateTime<boolean> = DateTime.local().minus({ weeks: 1 }) // Default: 1wk
 
     if (currentRange === '24h') {
       rangeStart = DateTime.local().minus({ hours: 24 })
@@ -67,7 +89,7 @@ export default class DashboardController {
       reportTransactionsQuery.where({ type: currentType })
     }
 
-    if (request.input('export') === 'ledger') {
+    if (payload.export) {
       const allReportRecords = await reportTransactionsQuery.clone()
 
       let csvContent = 'Timestamp,Type,Description,Amount (NGN)\n'
@@ -84,7 +106,7 @@ export default class DashboardController {
       response.header('Content-Type', 'text/csv')
       response.header(
         'Content-Disposition',
-        `attachment; filename="nairabook_ledger_${currentRange}_${currentType}.csv"`
+        `attachment; filename="nairabook_transaction_ledger_${currentRange}_${currentType}.csv"`
       )
 
       return response.send(csvContent)
