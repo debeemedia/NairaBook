@@ -9,8 +9,7 @@ import User from '#models/user'
 
 /**
  * @todo: Convert all queries to raw SQL queries.
- * 
- * 
+ *
  * Until all queries are converted to raw SQL
  * select only relevant columns.
  */
@@ -26,9 +25,6 @@ export default class DashboardController {
 
     const userId = result
 
-    /**
-     * 
-     */
     const user = await User.query()
       .select(['id', 'profileName', 'phoneNumber'])
       .where({ id: userId })
@@ -42,6 +38,49 @@ export default class DashboardController {
       )
     }
 
+    // Capture timeframe range and current pagination state
+    const currentRange = request.input('range', '1wk')
+    const page = Number(request.input('page', 1)) || 1
+    let rangeStart: DateTime<boolean> = DateTime.local().minus({ days: 7 })
+
+    if (currentRange === '24h') {
+      rangeStart = DateTime.local().minus({ hours: 24 })
+    } else if (currentRange === '1mo') {
+      rangeStart = DateTime.local().minus({ months: 1 })
+    } else if (currentRange === 'all') {
+      rangeStart = DateTime.fromMillis(0) // Start of time
+    }
+
+    // For the CSV report, get all transactions (sales and expenses) for the current range filter (regardless of current page)
+    const reportTransactionsQuery = Transaction.query()
+      .select(['id', 'type', 'itemName', 'amount', 'createdAt'])
+      .where({ userId })
+      .where('createdAt', '>=', rangeStart.toSQL()!)
+      .orderBy('createdAt', 'desc')
+
+    if (request.input('export') === 'ledger') {
+      const allReportRecords = await reportTransactionsQuery
+
+      let csvContent = 'Timestamp,Type,Description,Amount (NGN)\n'
+
+      for (const trx of allReportRecords) {
+        const timestamp = trx.createdAt.toFormat('yyyy-MM-dd HH:mm:ss')
+
+        const rowAmount = trx.type === TransactionTypesEnum.Sale ? trx.amount : -trx.amount
+
+        csvContent += `"${timestamp}","${trx.type.toUpperCase()}","${trx.itemName || ''}",${rowAmount}\n`
+      }
+
+      // Send the report for download
+      response.header('Content-Type', 'text/csv')
+      response.header(
+        'Content-Disposition',
+        `attachment; filename="nairabook_ledger_${currentRange}.csv"`
+      )
+
+      return response.send(csvContent)
+    }
+
     const todayStart = DateTime.local().startOf('day').toSQL()
 
     // Run all queries in parallel
@@ -53,6 +92,7 @@ export default class DashboardController {
       recentTransactions,
       activeDebtors,
       allProducts,
+      reportTransactions, // Paginated
     ] = await Promise.all([
       // Sum of Today's Sales
       Transaction.query()
@@ -102,6 +142,12 @@ export default class DashboardController {
         .select(['id', 'name', 'currentStock', 'updatedAt'])
         .where({ userId })
         .orderBy('updatedAt', 'desc'),
+
+      // Fetch paginated range-matching transactions
+      /**
+       * NB: Note that the model paginator properties like isEmpty, currentPage, lastPage, hasMorePages, total are used in the template.
+       */
+      reportTransactionsQuery.paginate(page, 8), // 8 per page
     ])
 
     const totalSalesToday = Number(salesResult?.$extras.total) || 0
@@ -117,7 +163,7 @@ export default class DashboardController {
 
       return {
         customerName: debtor.customer?.name || 'Unknown Customer',
-        itemDetails, 
+        itemDetails,
         status: debtor.status,
         remainingBalance: Number(debtor.amount) - Number(debtor.totalPaid),
       }
@@ -135,6 +181,8 @@ export default class DashboardController {
       recentTransactions,
       activeDebtors: mappedDebtors,
       allProducts,
+      reportTransactions,
+      currentRange, // Tracks state so template can "remember" active filter and pagination buttons
     })
   }
 }
