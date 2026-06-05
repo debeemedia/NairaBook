@@ -56,14 +56,7 @@ export default class LedgerService extends BaseService {
           .merge({
             currentStock:
               Number(product.currentStock) -
-              removedQuantity /**This might push stock into negative */,
-
-            /**
-             * @todo: If stock is negative, send a WhatsApp message or display a dashboard message for the user to update stock inventory.
-             * Or simply return a flag from this method and use it to append a text ---
-             * "\n\n *P.S.* Your stock for *${metrics.itemName}* is currently low (${result.currentStock}). Text me "Restock [item]" whenever you buy more!" ---
-             * to the final message sent in `processVoiceNote`.
-             */
+              removedQuantity /**This might push stock into negative. NB: The user's attention is drawn to this in the dashboard. */,
           })
           .save()
 
@@ -297,17 +290,6 @@ export default class LedgerService extends BaseService {
 
         await debt.useTransaction(trx).save()
       }
-
-      // await Transaction.create(
-      //   {
-      //     userId,
-      //     type: TransactionTypesEnum.Sale,
-      //     itemName: metrics.itemName || 'Unknown Item',
-      //     quantity: metrics.quantity || 1,
-      //     amount: parseFloat(metrics.amount),
-      //   },
-      //   { client: trx }
-      // )
 
       const transaction = await Transaction.create(
         {
