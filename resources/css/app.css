@@ -274,6 +274,22 @@
   font-size: 13px;
 }
 
+/* User Greeting Component */
+.user-greeting {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--clr-slate-600);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-greeting .user-name {
+  font-weight: 700;
+  color: var(--clr-emerald); /* Using the green brand color for the name */
+}
+
 /* --------------------------- */
 /* Default scaffolded styles */
 /* -------------------------- */

@@ -5,12 +5,13 @@ import Product from '#models/product'
 import Transaction, { TransactionTypesEnum } from '#models/transaction'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import User from '#models/user'
 
 /**
  * @todo: Convert all queries to raw SQL queries.
  */
 export default class DashboardController {
-  async create({ view, response, request }: HttpContext) {
+  async create({ view, response, request, logger }: HttpContext) {
     const result = await DashboardService.getUserFromDashboardLink({
       shortCode: request.param('shortCode'),
     })
@@ -20,6 +21,23 @@ export default class DashboardController {
     }
 
     const userId = result
+
+    /**
+     * @todo: Untill all queries are converted to raw SQL,
+     * select only relevant columns.
+     */
+    const user = await User.query()
+      .select(['id', 'profileName', 'phoneNumber'])
+      .where({ id: userId })
+      .first()
+
+    if (!user) {
+      logger.error({ userId }, '[DashboardController.create] User not found!')
+
+      return response.notFound(
+        'We could not find your record. Send a voice note to get a real link.'
+      )
+    }
 
     const todayStart = DateTime.local().startOf('day').toSQL()
 
@@ -66,6 +84,7 @@ export default class DashboardController {
       .limit(5)
 
     return view.render('pages/dashboard', {
+      user,
       metrics: {
         totalSalesToday,
         totalExpensesToday,
