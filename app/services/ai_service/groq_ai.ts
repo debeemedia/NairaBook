@@ -19,8 +19,13 @@ export default class GroqAI extends BaseAIService {
       throw error
     }
 
-    this.logger.info('[GroqAI.transcribeAudio] Audio transcription successful.')
+    const transcribedText = transcription.text
 
-    return transcription.text
+    this.logger.info(
+      { transcribedText },
+      '[GroqAI.transcribeAudio] Audio transcription successful.'
+    )
+
+    return transcribedText
   }
 }
