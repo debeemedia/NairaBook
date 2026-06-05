@@ -38,8 +38,13 @@ export default class DashboardController {
       )
     }
 
+    /**
+     * @todo: Validate querystrings
+     */
+
     // Capture timeframe range and current pagination state
     const currentRange = request.input('range', '1wk')
+    const currentType = request.input('type', 'all')
     const page = Number(request.input('page', 1)) || 1
     let rangeStart: DateTime<boolean> = DateTime.local().minus({ days: 7 })
 
@@ -58,8 +63,12 @@ export default class DashboardController {
       .where('createdAt', '>=', rangeStart.toSQL()!)
       .orderBy('createdAt', 'desc')
 
+    if (currentType !== 'all') {
+      reportTransactionsQuery.where({ type: currentType })
+    }
+
     if (request.input('export') === 'ledger') {
-      const allReportRecords = await reportTransactionsQuery
+      const allReportRecords = await reportTransactionsQuery.clone()
 
       let csvContent = 'Timestamp,Type,Description,Amount (NGN)\n'
 
@@ -75,7 +84,7 @@ export default class DashboardController {
       response.header('Content-Type', 'text/csv')
       response.header(
         'Content-Disposition',
-        `attachment; filename="nairabook_ledger_${currentRange}.csv"`
+        `attachment; filename="nairabook_ledger_${currentRange}_${currentType}.csv"`
       )
 
       return response.send(csvContent)
@@ -147,7 +156,7 @@ export default class DashboardController {
       /**
        * NB: Note that the model paginator properties like isEmpty, currentPage, lastPage, hasMorePages, total are used in the template.
        */
-      reportTransactionsQuery.paginate(page, 8), // 8 per page
+      reportTransactionsQuery.clone().paginate(page, 8), // 8 per page
     ])
 
     const totalSalesToday = Number(salesResult?.$extras.total) || 0
@@ -182,7 +191,9 @@ export default class DashboardController {
       activeDebtors: mappedDebtors,
       allProducts,
       reportTransactions,
-      currentRange, // Tracks state so template can "remember" active filter and pagination buttons
+      // Tracks states so template can "remember" active filter and pagination buttons:
+      currentRange,
+      currentType,
     })
   }
 }

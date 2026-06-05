@@ -259,32 +259,53 @@
 
         <div class="filter-group">
           <a
-            href="?range=24h#statement-ledger"
+            href="?range=24h&type={{ currentType }}#statement-ledger"
             class="filter-pill {{ currentRange === '24h' ? 'active' : '' }}"
           >
             24 Hours
           </a>
           <a
-            href="?range=1wk#statement-ledger"
+            href="?range=1wk&type={{ currentType }}#statement-ledger"
             class="filter-pill {{ currentRange === '1wk' ? 'active' : '' }}"
           >
             1 Week
           </a>
           <a
-            href="?range=1mo#statement-ledger"
+            href="?range=1mo&type={{ currentType }}#statement-ledger"
             class="filter-pill {{ currentRange === '1mo' ? 'active' : '' }}"
           >
             1 Month
           </a>
           <a
-            href="?range=all#statement-ledger"
+            href="?range=all&type={{ currentType }}#statement-ledger"
             class="filter-pill {{ currentRange === 'all' ? 'active' : '' }}"
           >
             All Time
           </a>
         </div>
 
-        <a href="?export=ledger&range={{ currentRange }}" class="export-btn">
+        <div class="filter-group">
+          <a
+            href="?range={{ currentRange }}&type=all#statement-ledger"
+            class="filter-pill {{ currentType === 'all' ? 'active' : '' }}"
+          >
+            All Types
+          </a>
+          <a
+            href="?range={{ currentRange }}&type=sale#statement-ledger"
+            class="filter-pill {{ currentType === 'sale' ? 'active' : '' }}"
+          >
+            Sales Only
+          </a>
+          <a
+            href="?range={{ currentRange }}&type=expense#statement-ledger"
+            class="filter-pill {{ currentType === 'expense' ? 'active' : '' }}"
+          >
+            Expenses Only
+          </a>
+        </div>
+
+        <a href="?export=ledger&range={{ currentRange }}&type={{ currentType }}" class="export-btn">
           📥 Download Filtered Statement (.csv)
         </a>
       </div>
