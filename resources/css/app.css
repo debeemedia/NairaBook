@@ -149,6 +149,75 @@
   } /* 2/3 and 1/3 split on desktop view */
 }
 
+/* Only apply these adjustments on desktop screens */
+@media (min-width: 1024px) {
+  /* Sync the Insights Section (Voice Logs vs Stockouts) */
+  .insights-section {
+    display: flex;
+    align-items: stretch; /* Forces both cards to be identical in height */
+    gap: 20px;
+  }
+
+  .insights-section .panel-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0; /* Let flex alignment handle spacing */
+  }
+
+  /* Make the stockout list scrollable within its matched height container */
+  .insights-section .alert-list {
+    flex: 1;
+    max-height: 290px; /* Perfectly aligns bottom boundaries with a 5-row table */
+    overflow-y: auto;
+    padding-right: 8px; /* Room for custom scrollbar */
+  }
+
+  /* Sync the Secondary Grid (Customer Debts vs Full Inventory Log) */
+  .secondary-grid {
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
+    margin-top: 25px;
+  }
+
+  .secondary-grid .panel-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Lock both tables to a standard maximum height */
+  .secondary-grid .ledger-table-container {
+    flex: 1;
+    max-height: 400px; /* Keeps about 7-8 rows visible at once */
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  /* Sleek Custom Scrollbars */
+  .insights-section .alert-list::-webkit-scrollbar,
+  .secondary-grid .ledger-table-container::-webkit-scrollbar {
+    width: 6px; /* Thin and non-intrusive */
+  }
+
+  .insights-section .alert-list::-webkit-scrollbar-track,
+  .secondary-grid .ledger-table-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .insights-section .alert-list::-webkit-scrollbar-thumb,
+  .secondary-grid .ledger-table-container::-webkit-scrollbar-thumb {
+    background-color: var(--clr-slate-300, #cbd5e1);
+    border-radius: 10px;
+  }
+
+  .insights-section .alert-list::-webkit-scrollbar-thumb:hover,
+  .secondary-grid .ledger-table-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--clr-slate-400, #94a3b8); /* Subtle focus shift on hover */
+  }
+}
+
 .panel-block {
   background: #ffffff;
   border: 1px solid var(--clr-slate-100);
@@ -195,6 +264,12 @@
 }
 .ledger-table tr:hover td {
   background-color: #fafafa;
+}
+.ledger-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--clr-panel-bg, #ffffff);
+  z-index: 2;
 }
 
 .item-name {
