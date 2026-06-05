@@ -290,6 +290,75 @@
   color: var(--clr-emerald); /* Using the green brand color for the name */
 }
 
+/* Export Action Button Deck */
+.actions-deck {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+@media (min-width: 640px) {
+  .actions-deck { margin-top: 0; }
+}
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--clr-slate-900);
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.export-btn:hover {
+  opacity: 0.9;
+}
+
+/* AI Voice Note Telemetry Subtitles */
+.item-transcript {
+  font-size: 11px;
+  color: var(--clr-amber);
+  background-color: var(--clr-amber-light);
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  font-style: italic;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Extended Multi-Panel Grid for bottom ledger sections */
+.secondary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+  margin-top: 25px;
+}
+@media (min-width: 1024px) {
+  .secondary-grid { grid-template-columns: 1fr 1fr; } /* Side by side on desktop */
+}
+
+/* Customer Debt Status Badges */
+.badge-debt-unpaid { background-color: var(--clr-rose-light); color: var(--clr-rose); }
+.badge-debt-partial { background-color: var(--clr-amber-light); color: var(--clr-amber); }
+.badge-debt-paid { background-color: var(--clr-emerald-light); color: var(--clr-emerald); }
+
+/* Inventory Status Alerts indicators */
+.stock-indicator {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.indicator-ok { background-color: var(--clr-emerald-light); color: var(--clr-emerald); }
+.indicator-low { background-color: var(--clr-amber-light); color: var(--clr-amber); }
+.indicator-empty { background-color: var(--clr-rose-light); color: var(--clr-rose); }
+
 /* --------------------------- */
 /* Default scaffolded styles */
 /* -------------------------- */

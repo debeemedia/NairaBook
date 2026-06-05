@@ -1,71 +1,62 @@
+{{-- resources/views/pages/dashboard.edge --}}
 @layout()
   <div class="dashboard-wrapper">
+    
     <header class="dashboard-header">
       <div class="header-title-block">
         <div class="user-greeting">
-          Hello, <span class="user-name">{{user.profileName}}</span> 👋
+          Hello, <span class="user-name">{{ user.profileName }}</span> 👋
         </div>
-        <h2>NairaBook Ledger</h2>
+        <h2>NairaBook Ledger Summary</h2>
         <p class="header-subtext">
           Real-time financials and inventory processed directly via WhatsApp voice notes.
         </p>
       </div>
-      <div><span class="status-badge">🟢 Live Connection</span></div>
+      
+      <div class="actions-deck">
+        <a href="?export=ledger" class="export-btn" download>
+          📥 Export Financials (.CSV)
+        </a>
+        <span class="status-badge">🟢 Live Connection</span>
+      </div>
     </header>
 
     <section class="metrics-grid">
       <div class="metric-card">
         <span class="metric-label">Sales Today</span>
         <div class="metric-value val-sales">
-          ₦{{
-            metrics.totalSalesToday.toLocaleString('en-NG', {
-              minimumFractionDigits: 2,
-            })
-          }}
+          ₦{{ metrics.totalSalesToday.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
         </div>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Expenses Today</span>
         <div class="metric-value val-expenses">
-          ₦{{
-            metrics.totalExpensesToday.toLocaleString('en-NG', {
-              minimumFractionDigits: 2,
-            })
-          }}
+          ₦{{ metrics.totalExpensesToday.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
         </div>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Today's Net Flow</span>
-        <div
-          class="metric-value {{ metrics.netProfitToday >= 0 ? 'val-profit-pos' : 'val-profit-neg' }}"
-        >
-          ₦{{
-            metrics.netProfitToday.toLocaleString('en-NG', {
-              minimumFractionDigits: 2,
-            })
-          }}
+        <div class="metric-value {{ metrics.netProfitToday >= 0 ? 'val-profit-pos' : 'val-profit-neg' }}">
+          ₦{{ metrics.netProfitToday.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
         </div>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Money Outside (All Time)</span>
         <div class="metric-value val-debt">
-          ₦{{
-            metrics.totalOutstandingDebt.toLocaleString('en-NG', {
-              minimumFractionDigits: 2,
-            })
-          }}
+          ₦{{ metrics.totalOutstandingDebt.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
         </div>
       </div>
     </section>
 
     <div class="insights-section">
+      
       <section class="panel-block">
         <div class="panel-header">
           <h3>Recent Voice Activity Logs</h3>
-          <p class="header-subtext">5 Latest Events</p>
+          <p class="header-subtext">5 latest events captured and parsed from your WhatsApp voice notes</p>
         </div>
 
         <div class="ledger-table-container">
@@ -86,9 +77,7 @@
                 @each(trx in recentTransactions)
                   <tr>
                     <td>
-                      <span
-                        class="type-badge {{ trx.type === 'sale' ? 'badge-sale' : 'badge-expense' }}"
-                      >
+                      <span class="type-badge {{ trx.type === 'sale' ? 'badge-sale' : 'badge-expense' }}">
                         {{ trx.type }}
                       </span>
                     </td>
@@ -97,17 +86,13 @@
                       <p class="item-time">{{ trx.createdAt.toFormat('hh:mm a') }}</p>
                     </td>
                     <td class="item-amount">
-                      ₦{{
-                        trx.amount.toLocaleString('en-NG', {
-                          minimumFractionDigits: 2,
-                        })
-                      }}
+                      ₦{{ trx.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
                     </td>
                   </tr>
                 @end
               </tbody>
             </table>
-          @end
+          @endif
         </div>
       </section>
 
@@ -119,10 +104,7 @@
 
         <div class="alert-list">
           @if(stockAlerts.length === 0)
-            <div
-              class="empty-state"
-              style="padding: 20px; border: 1px dashed var(--clr-emerald); background-color: var(--clr-emerald-light); color: var(--clr-emerald); border-radius: 12px; font-weight: 600;"
-            >
+            <div class="empty-state" style="padding: 20px; border: 1px dashed var(--clr-emerald); background-color: var(--clr-emerald-light); color: var(--clr-emerald); border-radius: 12px; font-weight: 600;">
               ✨ All balances healthy! No actions needed.
             </div>
           @else
@@ -135,9 +117,101 @@
                 <div class="alert-counter">{{ product.currentStock }}</div>
               </div>
             @end
-          @end
+          @endif
         </div>
       </section>
+    </div>
+
+    <div class="secondary-grid">
+      
+      <section class="panel-block">
+        <div class="panel-header">
+          <h3>Customer Debt Accounts</h3>
+          <p class="header-subtext">Active books tracking outstanding debts</p>
+        </div>
+        <div class="ledger-table-container">
+          @if(!activeDebtors || activeDebtors.length === 0)
+            <div class="empty-state">
+              No outstanding customer balances found on your books. 🎉
+            </div>
+          @else
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Outstanding Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+               @each(debtor in activeDebtors)
+                  <tr>
+                    <td>
+                      <p class="item-name">{{ debtor.customerName }}</p>
+                      <p class="item-time">Item: {{ debtor.itemDetails }}</p>
+                    </td>
+                    <td>
+                      <span class="type-badge {{ debtor.status === 'unpaid' ? 'badge-debt-unpaid' : 'badge-debt-partial' }}">
+                        {{ debtor.status }}
+                      </span>
+                    </td>
+                    <td class="item-amount" style="color: var(--clr-amber);">
+                      ₦{{ debtor.remainingBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
+                    </td>
+                  </tr>
+                @end
+              </tbody>
+            </table>
+          @endif
+        </div>
+      </section>
+
+      <section class="panel-block">
+        <div class="panel-header">
+          <h3>Inventory Log</h3>
+          <p class="header-subtext">Active tracking of stock states across all products</p>
+        </div>
+        <div class="ledger-table-container">
+          @if(!allProducts || allProducts.length === 0)
+            <div class="empty-state">
+              No products found in your catalog. Say "add 20 bags of rice for 2 million Naira" via WhatsApp to start! 📦
+            </div>
+          @else
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>Product Details</th>
+                  <th>Stock Status</th>
+                  <th style="text-align: right;">Current Inventory</th>
+                </tr>
+              </thead>
+              <tbody>
+                @each(prod in allProducts)
+                  <tr>
+                    <td>
+                      <p class="item-name">{{ prod.name }}</p>
+                      <p class="item-time">Last updated: {{ prod.updatedAt?.toFormat('LLL dd, yyyy') || 'Recent' }}</p>
+                    </td>
+                    <td>
+                      @if(prod.currentStock <= 0)
+                        <span class="stock-indicator indicator-empty">Stockout</span>
+                      @elseif(prod.currentStock <= 5)
+                        <span class="stock-indicator indicator-low">Low Stock</span>
+                      @else
+                        <span class="stock-indicator indicator-ok">Healthy</span>
+                      @endif
+                    </td>
+                    <td class="item-amount" style="color: var(--clr-slate-900);">
+                      {{ prod.currentStock }} units
+                    </td>
+                  </tr>
+                @end
+              </tbody>
+            </table>
+          @endif
+        </div>
+      </section>
+
     </div>
   </div>
 @end
