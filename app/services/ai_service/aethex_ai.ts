@@ -1,4 +1,5 @@
 import env from '#start/env'
+import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import BaseAIService from './base_ai_service.ts'
 
 export default class AethexAI extends BaseAIService {
@@ -48,5 +49,31 @@ export default class AethexAI extends BaseAIService {
 
       throw error
     }
+  }
+
+  /**
+   * Aethex AI is strictly for voice.
+   * Delegate the business metrics extraction to another engine.
+   */
+  get #textToTextEngine() {
+    return env.get('AETHEX_AI_TEXT_ENGINE')
+  }
+
+  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
+    if (this.#textToTextEngine === 'gemini') {
+      const GeminiAiClass = (await import('./gemini_ai.ts')).default
+      const geminiAiInstance = new GeminiAiClass()
+
+      this.logger.info('[AethexAI.extractBusinessMetrics] Delegating to GeminiAI...')
+
+      return await geminiAiInstance.extractBusinessMetrics(text)
+    }
+
+    const GroqAiClass = (await import('./groq_ai.ts')).default
+    const groqInstance = new GroqAiClass()
+
+    this.logger.info('[AethexAI.extractBusinessMetrics] Delegating to GroqAI...')
+
+    return await groqInstance.extractBusinessMetrics(text)
   }
 }

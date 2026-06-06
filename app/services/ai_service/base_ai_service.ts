@@ -1,6 +1,4 @@
 import BaseService from '../base_service.ts'
-import env from '#start/env'
-import Groq from 'groq-sdk'
 import MediaService from '../media_service.ts'
 import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import LedgerService from '#services/ledger_service'
@@ -39,7 +37,7 @@ export default abstract class BaseAIService extends BaseService {
         to: targetMerchantWhatsappNumber,
         messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
         withDashboardLink: true,
-        userId
+        userId,
       })
     }
 
@@ -89,16 +87,13 @@ export default abstract class BaseAIService extends BaseService {
       to: targetMerchantWhatsappNumber,
       messageBody,
       withDashboardLink: true,
-      userId
+      userId,
     })
   }
 
   protected abstract transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
 
-  protected groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
-
-  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
-    const prompt = `
+  protected prompt = `
       You are a specialized financial parsing engine for NairaBook, a ledger app for Nigerian micro-merchants.
       Your job is to parse raw text transcripts (which may include Nigerian Pidgin, local business slang, or currency terms) and output a STRICT, valid JSON object.
       
@@ -114,7 +109,7 @@ export default abstract class BaseAIService extends BaseService {
       1. SUBJECT AWARENESS: Distinguish between the merchant ("I") and a customer (e.g., "Tunde", "Musa", "Mama Amaka").
          - If a specific person's name is mentioned buying something (e.g., "Tunde bought one cup of rice"), this is a "sale" transaction, NOT a restock. Extract the name into 'customerName'.
          - Only treat "bought" or "paid for" as a restock inventory entry if the merchant implies THEY ("I") bought it to replenish the shop (e.g., "I bought 3 bags of rice to sell", "I buy market").
-      2. AMOUNT FALLBACK: If an amount is mangled or has typos like "500nra" or "500sad nara", recognize it as the currency amount and extract it cleanly as "500.00".
+      2. AMOUNT FALLBACK: Assume that the currency is always NAIRA. If an amount is mangled or has typos like "500nra" or "500sad nara", recognize it as the currency amount and extract it cleanly as "500.00".
 
       2. Currency/Amount parsing:
          - Extract amounts cleanly. "5k" is "5000.00", "20 thousand" is "20000.00".
@@ -140,79 +135,5 @@ export default abstract class BaseAIService extends BaseService {
       }
     `
 
-    try {
-      const response = await this.groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: `Parse this transcript: "${text}"` },
-        ],
-        response_format: {
-          type: 'json_object',
-          /*
-          type: 'json_schema',
-          json_schema: {
-            name: 'ledger_extraction',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                intent: {
-                  type: 'string',
-                  enum: ['transaction', 'inventory', 'unknown'],
-                },
-                type: {
-                  type: 'string',
-                  enum: ['sale', 'debt', 'expense', 'restock', 'unknown'],
-                },
-                customerName: {
-                  type: ['string', 'null'],
-                },
-                itemName: {
-                  type: ['string', 'null'],
-                },
-                quantity: {
-                  type: ['integer', 'null'],
-                },
-                amount: {
-                  type: 'string',
-                  description:
-                    'The financial value formatted as a decimal string with 2 decimal places, e.g., "45000.00"',
-                },
-              },
-              required: ['intent', 'type', 'customerName', 'itemName', 'quantity', 'amount'],
-              additionalProperties: false,
-            },
-          },
-          */
-        },
-        temperature: 0.1, // Keep it low for predictable data parsing
-      })
-
-      const content = response.choices[0].message.content
-      if (!content) {
-        const errorMessage = 'Groq returned an empty response payload.'
-
-        this.logger.error(`BaseAIService.extractBusinessMetrics] ${errorMessage}`)
-
-        throw new Error(errorMessage)
-      }
-
-      const metrics = JSON.parse(content)
-
-      this.logger.info(
-        { metrics },
-        '[BaseAIService.extractBusinessMetrics] Business metrics extraction successful.'
-      )
-
-      return metrics
-    } catch (error) {
-      this.logger.error(
-        { err: error },
-        'BaseAIService.extractBusinessMetrics] Business metrics extraction failed.'
-      )
-      throw error
-    }
-  }
+  protected abstract extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure>
 }

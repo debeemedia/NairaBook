@@ -12,10 +12,15 @@ export default class AppProvider {
     this.app.container.bind(BaseAIService, async () => {
       const aethexAiService = (await import('../app/services/ai_service/aethex_ai.ts')).default
       const groqAiService = (await import('../app/services/ai_service/groq_ai.ts')).default
+      const geminiAiService = (await import('../app/services/ai_service/gemini_ai.ts')).default
 
-      return env.get('AI_SERVICE_PROVIDER').toLowerCase() === 'aethex'
+      const aiServiceProvider = env.get('AI_SERVICE_PROVIDER').toLowerCase()
+
+      return aiServiceProvider === 'aethex'
         ? new aethexAiService()
-        : new groqAiService()
+        : aiServiceProvider === 'gemini'
+          ? new geminiAiService()
+          : new groqAiService()
     })
   }
 
