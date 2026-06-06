@@ -10,9 +10,6 @@ import vine, { errors } from '@vinejs/vine'
 
 /**
  * @todo: Convert all queries to raw SQL queries.
- *
- * Until all queries are converted to raw SQL
- * select only relevant columns.
  */
 export default class DashboardController {
   async create({ view, response, request, logger }: HttpContext) {
