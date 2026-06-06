@@ -4,20 +4,28 @@ import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import LedgerService from '#services/ledger_service'
 
 export default abstract class BaseAIService extends BaseService {
-  public async processVoiceNote({
+  public async processMessage({
     mediaUrl,
+    text,
     userId,
     targetMerchantWhatsappNumber,
     appSenderWhatsappNumber,
   }: {
-    mediaUrl: string
+    mediaUrl?: string
+    text?: string
     userId: number
     targetMerchantWhatsappNumber: string
     appSenderWhatsappNumber: string
   }) {
-    const downloadedBuffer = await MediaService.download(mediaUrl)
+    if (!mediaUrl && !text) {
+      throw new Error('Provide text or audio for processing.')
+    }
 
-    const text = await this.transcribeAudio(downloadedBuffer)
+    if (mediaUrl) {
+      const downloadedBuffer = await MediaService.download(mediaUrl)
+
+      text = await this.transcribeAudio(downloadedBuffer)
+    }
 
     if (!text || text.trim() === '') {
       this.logger.warn({ userId }, '[BaseAIService] Received empty transcript.')
