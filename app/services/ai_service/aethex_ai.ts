@@ -3,6 +3,9 @@ import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import BaseAIService from './base_ai_service.ts'
 
 export default class AethexAI extends BaseAIService {
+  /**
+   * Note that Aethex does poorly when transcribing Nigerian local languages. Bereft of context.
+   */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
     const audioBlob = new Blob([audioBuffer], { type: 'audio/ogg' })
 
@@ -53,27 +56,41 @@ export default class AethexAI extends BaseAIService {
 
   /**
    * Aethex AI is strictly for voice.
-   * Delegate the business metrics extraction to another engine.
+   * Delegate text-to-text tasks to another engine.
    */
-  get #textToTextEngine() {
-    return env.get('AETHEX_AI_TEXT_ENGINE')
-  }
+  async #getTextToTextAIService() {
+    const aiEngine = env.get('AETHEX_AI_TEXT_ENGINE')
 
-  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
-    if (this.#textToTextEngine === 'gemini') {
+    if (aiEngine === 'gemini') {
       const GeminiAiClass = (await import('./gemini_ai.ts')).default
-      const geminiAiInstance = new GeminiAiClass()
 
-      this.logger.info('[AethexAI.extractBusinessMetrics] Delegating to GeminiAI...')
+      this.logger.info('[AethexAI.getTextToTextAIService] Delegating to GeminiAI...')
 
-      return await geminiAiInstance.extractBusinessMetrics(text)
+      return new GeminiAiClass({
+        isStandaloneTextCall: true,
+      }) /** Check the GeminiAI class for the importance of the `isStandaloneTextCall` flag */
     }
 
     const GroqAiClass = (await import('./groq_ai.ts')).default
-    const groqInstance = new GroqAiClass()
 
-    this.logger.info('[AethexAI.extractBusinessMetrics] Delegating to GroqAI...')
+    this.logger.info('[AethexAI.getTextToTextAIService] Delegating to GroqAI...')
 
-    return await groqInstance.extractBusinessMetrics(text)
+    return new GroqAiClass()
+  }
+
+  protected async translateText(text: string): Promise<string> {
+    this.logger.info('[AethexAI.translateText] ...')
+
+    const aiTextService = await this.#getTextToTextAIService()
+
+    return await aiTextService.translateText(text)
+  }
+
+  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
+    this.logger.info('[AethexAI.extractBusinessMetrics] ...')
+
+    const aiTextService = await this.#getTextToTextAIService()
+
+    return await aiTextService.extractBusinessMetrics(text)
   }
 }

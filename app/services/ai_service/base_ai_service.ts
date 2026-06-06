@@ -32,7 +32,9 @@ export default abstract class BaseAIService extends BaseService {
       return
     }
 
-    const metrics = await this.extractBusinessMetrics(text)
+    const translatedText = await this.translateText(text)
+
+    const metrics = await this.extractBusinessMetrics(translatedText)
 
     if (metrics.intent === 'unknown') {
       this.logger.warn(
@@ -117,7 +119,24 @@ export default abstract class BaseAIService extends BaseService {
 
   protected abstract transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
 
-  protected prompt = `
+  protected abstract translateText(text: string): Promise<string>
+
+  protected abstract extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure>
+
+  protected translationPrompt = `
+    You are a highly accurate, direct translation engine for NairaBook.
+    Your single job is to translate the user's input text into clean, natural English.
+    The input text may be in Nigerian Pidgin, Yoruba, Igbo, Hausa, or a mix of English and local dialects.
+    
+    RULES:
+    1. Translate everything literally and contextually into English, whether it is a business transaction, a greeting, a question, or a casual statement.
+    2. Maintain all original proper nouns, names (e.g., Tunde, Musa), item names, numbers, and quantities exactly as they are.
+    3. DO NOT add any conversational filler, notes, or explanations.
+
+    Return ONLY the plain text English translation. No markdown wrappers, no filler.
+  `
+
+  protected extractionPrompt = `
       You are a specialized financial parsing engine for NairaBook, a ledger app for Nigerian micro-merchants.
       Your job is to parse raw text transcripts (which may include Nigerian Pidgin, local business slang, or currency terms) and output a STRICT, valid JSON object.
       
@@ -158,6 +177,4 @@ export default abstract class BaseAIService extends BaseService {
         "amount": "string decimal or null"
       }
     `
-
-  protected abstract extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure>
 }

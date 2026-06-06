@@ -6,6 +6,9 @@ import env from '#start/env'
 export default class GroqAI extends BaseAIService {
   #groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
 
+  /**
+   * Note that Groq (Whisper) is useless for translating/transcribing Nigerian local languages.
+   */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
     const file = new File([audioBuffer], 'voice_note.ogg', { type: 'audio/ogg' })
 
@@ -14,8 +17,9 @@ export default class GroqAI extends BaseAIService {
     try {
       transcription = await this.#groq.audio.transcriptions.create({
         model: 'whisper-large-v3',
-        language: 'en',
         file,
+        prompt:
+          'NairaBook app transcript. Recording informal marketplace retail transactions, spoken in a mix of English, Nigerian Pidgin and local languages like Igbo, Yoruba, and Hausa. Tracking cash flow, sales, customer debts, and inventory restocks.',
       })
     } catch (error) {
       this.logger.error({ err: error }, '[GroqAI.transcribeAudio] Failed to transcribe audio.')
@@ -33,6 +37,48 @@ export default class GroqAI extends BaseAIService {
     return transcribedText
   }
 
+  async translateText(text: string): Promise<string> {
+    try {
+      const response = await this.#groq.chat.completions.create({
+        model: 'qwen/qwen3-32b',
+        messages: [
+          { role: 'system', content: this.translationPrompt },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.3, // Slightly higher for natural translation fluidity, but keeping it grounded
+      })
+
+      const translatedText = response.choices[0].message.content?.trim()
+
+      // Qwen model outputs a "think" block along with the translation. Strip it off
+      const cleanTranslatedText = translatedText
+        ? translatedText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+        : ''
+
+      if (!cleanTranslatedText) {
+        this.logger.warn(
+          { originalText: text },
+          '[GroqAI.translateText] Translation returned empty content. Falling back to original text.'
+        )
+        return text
+      }
+
+      this.logger.info(
+        { originalText: text, cleanTranslatedText },
+        '[GroqAI.translateText] Text normalization/translation successful.'
+      )
+
+      return cleanTranslatedText
+    } catch (error) {
+      this.logger.error(
+        { err: error, originalText: text },
+        '[GroqAI.translateText] Text translation failed. Falling back to original text to prevent crash.'
+      )
+
+      return text
+    }
+  }
+
   async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
     try {
       const response = await this.#groq.chat.completions.create({
@@ -40,7 +86,7 @@ export default class GroqAI extends BaseAIService {
         // model: 'llama-3.1-8b-instant',
         // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
         messages: [
-          { role: 'system', content: this.prompt },
+          { role: 'system', content: this.extractionPrompt },
           { role: 'user', content: `Parse this transcript: "${text}"` },
         ],
         response_format: {
