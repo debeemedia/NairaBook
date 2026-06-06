@@ -71,7 +71,7 @@ export default class GroqAI extends BaseAIService {
                   type: ['integer', 'null'],
                 },
                 amount: {
-                  type: 'string',
+                  type: ['string', 'null'],
                   description:
                     'The financial value formatted as a decimal string with 2 decimal places, e.g., "45000.00"',
                 },

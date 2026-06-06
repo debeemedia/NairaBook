@@ -22,7 +22,7 @@ export default class LedgerService extends BaseService {
     await db.transaction(async (trx) => {
       const transaction = await Transaction.create(
         {
-          amount: parseFloat(metrics.amount),
+          amount: parseFloat(metrics.amount!),
           itemName: metrics.itemName || 'Unknown Item',
           quantity: metrics.quantity || 1,
           type: metrics.type,
@@ -93,22 +93,22 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
-    const returnMessage = 'Boss, you seem to be recording a debt but you did not mention the'
+    const returnMessage = 'Boss, you seem to be recording a debt but you did not mention'
     if (!metrics.customerName?.trim()) {
       this.logger.warn(
         { userId, metrics },
         '[LedgerService.handleDebt] Received debt without a customerName. Aborting.'
       )
 
-      return returnMessage + ` customer's name.`
+      return returnMessage + ` the customer's name.`
     }
     if (!metrics.amount?.trim() || metrics.amount.trim() === '0.00') {
       this.logger.warn(
         { userId, metrics },
-        '[LedgerService.handleDebt] Received debt without an amount. Aborting.'
+        '[LedgerService.handleDebt] Received debt without a valid amount. Aborting.'
       )
 
-      return returnMessage + ` amount.`
+      return returnMessage + ` a valid amount.`
     }
 
     const normalizedItemName = metrics.itemName ? metrics.itemName.toLowerCase().trim() : null
@@ -152,7 +152,7 @@ export default class LedgerService extends BaseService {
           {
             productId: product.id,
             quantityChanged: removedQuantity,
-            amount: parseFloat(metrics.amount),
+            amount: parseFloat(metrics.amount!),
             quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Subtraction,
             notes: 'Product stock reduced via customer credit.',
           },
@@ -163,7 +163,7 @@ export default class LedgerService extends BaseService {
       const debt = await Debt.create(
         {
           userId,
-          amount: parseFloat(metrics.amount),
+          amount: parseFloat(metrics.amount!),
           customerId: customer.id,
           itemName: metrics.itemName || 'Unknown Item',
           quantity: removedQuantity,
@@ -198,8 +198,7 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
-    const returnMessage =
-      'Boss, you seem to be recording a debt repayment but you did not mention the'
+    const returnMessage = 'Boss, you seem to be recording a debt repayment but you did not mention'
 
     if (!metrics.customerName?.trim()) {
       this.logger.warn(
@@ -207,15 +206,15 @@ export default class LedgerService extends BaseService {
         '[LedgerService.handleDebtRepayment] Received debt repayment without a customerName. Aborting.'
       )
 
-      return returnMessage + ` customer's name.`
+      return returnMessage + ` the customer's name.`
     }
     if (!metrics.amount?.trim() || metrics.amount.trim() === '0.00') {
       this.logger.warn(
         { userId, metrics },
-        '[LedgerService.handleDebtRepayment] Received debt repayment without an amount. Aborting.'
+        '[LedgerService.handleDebtRepayment] Received debt repayment without a valid amount. Aborting.'
       )
 
-      return returnMessage + ' amount.'
+      return returnMessage + ' a valid amount.'
     }
 
     const normalizedCustomerName = metrics.customerName!.toUpperCase().trim()
@@ -239,7 +238,7 @@ export default class LedgerService extends BaseService {
         .orderBy('createdAt', 'asc')
         .forUpdate() // Lock rows to prevent race conditions
 
-      let repaymentAmount = parseFloat(metrics.amount)
+      let repaymentAmount = parseFloat(metrics.amount!)
 
       const debtsUpdated: Array<{
         debtId: number
@@ -296,7 +295,7 @@ export default class LedgerService extends BaseService {
           userId,
           type: TransactionTypesEnum.Sale,
           itemName: `Debt Repayment: ${customer.name}`,
-          amount: parseFloat(metrics.amount),
+          amount: parseFloat(metrics.amount!),
         },
         { client: trx }
       )
@@ -306,7 +305,7 @@ export default class LedgerService extends BaseService {
           userId,
           transactionId: transaction.id,
           customerName: metrics.customerName,
-          totalRepaymentBrought: parseFloat(metrics.amount),
+          totalRepaymentBrought: parseFloat(metrics.amount!),
           changeLeftOver: repaymentAmount, // Should be 0 unless they overpaid their entire total debt balance...
           debtsAffectedCount: debtsUpdated.length,
           debtsDetails: debtsUpdated,
@@ -356,7 +355,7 @@ export default class LedgerService extends BaseService {
         {
           productId: product.id,
           quantityChanged: addedQuantity,
-          amount: parseFloat(metrics.amount),
+          amount: parseFloat(metrics.amount!),
           quantityChangeType: ProductInventoryLogQuantityChangeTypesEnum.Addition,
           notes: 'Product restocked via voice note.',
         },
@@ -369,7 +368,7 @@ export default class LedgerService extends BaseService {
           type: TransactionTypesEnum.Expense,
           itemName: metrics.itemName || 'Unknown Item',
           quantity: metrics.quantity || 1,
-          amount: parseFloat(metrics.amount),
+          amount: parseFloat(metrics.amount!),
         },
         { client: trx }
       )

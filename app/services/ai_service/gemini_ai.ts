@@ -61,7 +61,6 @@ export default class GeminiAI extends BaseAIService {
     }
   }
 
- 
   async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
     try {
       const response = await this.#gemini.models.generateContent({
@@ -97,6 +96,7 @@ export default class GeminiAI extends BaseAIService {
               },
               amount: {
                 type: Type.STRING,
+                nullable: true,
                 description:
                   'The financial value formatted as a decimal string with 2 decimal places, e.g., "45000.00"',
               },

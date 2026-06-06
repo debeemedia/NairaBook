@@ -37,13 +37,29 @@ export default abstract class BaseAIService extends BaseService {
     if (metrics.intent === 'unknown') {
       this.logger.warn(
         { userId, metrics },
-        '[BaseAIService.processVoiceNote] Could not resolve intent from transcript.'
+        '[BaseAIService.processMessage] Could not resolve intent from transcript.'
       )
 
       return await MediaService.sendWhatsAppMessage({
         from: appSenderWhatsappNumber,
         to: targetMerchantWhatsappNumber,
         messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
+        withDashboardLink: true,
+        userId,
+      })
+    }
+
+    /**
+     * NB: Ensure that amount is provided for every business action,
+     * even for product restocking since an expense record is created for it.
+     */
+    if (!metrics.amount && metrics.amount !== '0.00') {
+      this.logger.warn({ userId, metrics }, '[BaseAIService.processMessage] Amount not provided.')
+
+      return await MediaService.sendWhatsAppMessage({
+        from: appSenderWhatsappNumber,
+        to: targetMerchantWhatsappNumber,
+        messageBody: `Boss! You did not provide any amount for this business action.`,
         withDashboardLink: true,
         userId,
       })
@@ -84,7 +100,7 @@ export default abstract class BaseAIService extends BaseService {
     } catch (error) {
       this.logger.error(
         { err: error, metrics },
-        '[BaseAIService.processVoiceNote -> LedgerService] Database persistence failed for extracted metrics.'
+        '[BaseAIService.processMessage -> LedgerService] Database persistence failed for extracted metrics.'
       )
 
       throw error
@@ -139,7 +155,7 @@ export default abstract class BaseAIService extends BaseService {
         "customerName": "String or null",
         "itemName": "String or null",
         "quantity": integer or null,
-        "amount": "string decimal" or "0.00"
+        "amount": "string decimal or null"
       }
     `
 
