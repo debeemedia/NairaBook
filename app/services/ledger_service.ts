@@ -86,6 +86,9 @@ export default class LedgerService extends BaseService {
     })
   }
 
+  /**
+   * @todo: Handle merchant debt too.
+   */
   public static async handleDebt({
     metrics,
     userId,
