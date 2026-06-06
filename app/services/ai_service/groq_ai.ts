@@ -7,7 +7,8 @@ export default class GroqAI extends BaseAIService {
   #groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
 
   /**
-   * Note that Groq (Whisper) is useless for translating/transcribing Nigerian local languages.
+   * Note that Groq (Whisper & Qwen) is useless for transcribing & translating Nigerian local languages.
+   * Kept here as fallback. Useful for English, maybe Pidgin. Unlimited tries with no rate limits when testing.
    */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
     const file = new File([audioBuffer], 'voice_note.ogg', { type: 'audio/ogg' })
