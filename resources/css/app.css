@@ -621,7 +621,7 @@
   font-size: 3rem;
   font-weight: 800;
   line-height: 1.2;
-  color: var(--text-main);
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 .gradient-text {
@@ -774,7 +774,7 @@
   .features-grid {
     grid-template-columns: repeat(6, 1fr);
   }
-  
+
   .feature-card:nth-child(1),
   .feature-card:nth-child(2),
   .feature-card:nth-child(3) {
