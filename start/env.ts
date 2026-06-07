@@ -27,7 +27,13 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   TWILIO_ACCOUNT_SID: Env.schema.string(),
   TWILIO_AUTH_TOKEN: Env.schema.string(),
-  AI_SERVICE_PROVIDER: Env.schema.enum(['aethex', 'groq']),
+  AI_SERVICE_PROVIDER: Env.schema.enum(['aethex', 'groq', 'gemini']),
+  AETHEX_AI_TEXT_ENGINE: Env.schema.enum(['groq', 'gemini']),
   GROQ_API_KEY: Env.schema.string(),
   AETHEX_API_KEY: Env.schema.string(),
+  GEMINI_API_KEY: Env.schema.string(),
+
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.secret.optional(),
 })
