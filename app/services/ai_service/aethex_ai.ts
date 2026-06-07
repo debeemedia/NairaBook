@@ -1,7 +1,11 @@
 import env from '#start/env'
+import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import BaseAIService from './base_ai_service.ts'
 
 export default class AethexAI extends BaseAIService {
+  /**
+   * Note that Aethex does poorly when transcribing Nigerian local languages. Bereft of context.
+   */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
     const audioBlob = new Blob([audioBuffer], { type: 'audio/ogg' })
 
@@ -48,5 +52,43 @@ export default class AethexAI extends BaseAIService {
 
       throw error
     }
+  }
+
+  /**
+   * Aethex AI is strictly for voice.
+   * Delegate text-to-text tasks to another engine.
+   */
+  async #getTextToTextAIService() {
+    const aiEngine = env.get('AETHEX_AI_TEXT_ENGINE')
+
+    if (aiEngine === 'gemini') {
+      const GeminiAiClass = (await import('./gemini_ai.ts')).default
+
+      this.logger.info('[AethexAI.getTextToTextAIService] Delegating to GeminiAI...')
+
+      return new GeminiAiClass()
+    }
+
+    const GroqAiClass = (await import('./groq_ai.ts')).default
+
+    this.logger.info('[AethexAI.getTextToTextAIService] Delegating to GroqAI...')
+
+    return new GroqAiClass()
+  }
+
+  protected async translateText(text: string): Promise<string> {
+    this.logger.info('[AethexAI.translateText] ...')
+
+    const aiTextService = await this.#getTextToTextAIService()
+
+    return await aiTextService.translateText(text)
+  }
+
+  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
+    this.logger.info('[AethexAI.extractBusinessMetrics] ...')
+
+    const aiTextService = await this.#getTextToTextAIService()
+
+    return await aiTextService.extractBusinessMetrics(text)
   }
 }

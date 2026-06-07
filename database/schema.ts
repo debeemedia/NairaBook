@@ -8,10 +8,12 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class CustomerSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'name', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'customerId', 'id', 'name', 'updatedAt', 'userId'] as const
   $columns = CustomerSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column()
+  declare customerId: number | null
   @column({ isPrimary: true })
   declare id: number
   @column()

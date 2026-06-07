@@ -1,45 +1,69 @@
 import BaseService from '../base_service.ts'
-import env from '#start/env'
-import Groq from 'groq-sdk'
 import MediaService from '../media_service.ts'
 import { BusinessMetricsStructure } from '../../../contracts/app.ts'
 import LedgerService from '#services/ledger_service'
 
 export default abstract class BaseAIService extends BaseService {
-  public async processVoiceNote({
+  public async processMessage({
     mediaUrl,
+    text,
     userId,
     targetMerchantWhatsappNumber,
     appSenderWhatsappNumber,
   }: {
-    mediaUrl: string
+    mediaUrl?: string
+    text?: string
     userId: number
     targetMerchantWhatsappNumber: string
     appSenderWhatsappNumber: string
   }) {
-    const downloadedBuffer = await MediaService.download(mediaUrl)
+    if (!mediaUrl && !text) {
+      throw new Error('Provide text or audio for processing.')
+    }
 
-    const text = await this.transcribeAudio(downloadedBuffer)
+    if (mediaUrl) {
+      const downloadedBuffer = await MediaService.download(mediaUrl)
+
+      text = await this.transcribeAudio(downloadedBuffer)
+    }
 
     if (!text || text.trim() === '') {
       this.logger.warn({ userId }, '[BaseAIService] Received empty transcript.')
       return
     }
 
-    const metrics = await this.extractBusinessMetrics(text)
+    const translatedText = await this.translateText(text)
+
+    const metrics = await this.extractBusinessMetrics(translatedText)
 
     if (metrics.intent === 'unknown') {
       this.logger.warn(
         { userId, metrics },
-        '[BaseAIService.processVoiceNote] Could not resolve intent from transcript.'
+        '[BaseAIService.processMessage] Could not resolve intent from transcript.'
       )
 
       return await MediaService.sendWhatsAppMessage({
         from: appSenderWhatsappNumber,
         to: targetMerchantWhatsappNumber,
-        messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
+        messageBody: `😮 Boss, I didn't get that clearly.\nPlease try again! Say something like:\n"I sold two bags of rice for 20k" or "Tunde bought 3 eggs on credit."`,
         withDashboardLink: true,
-        userId
+        userId,
+      })
+    }
+
+    /**
+     * NB: Ensure that amount is provided for every business action,
+     * even for product restocking since an expense record is created for it.
+     */
+    if (!metrics.amount && metrics.amount !== '0.00') {
+      this.logger.warn({ userId, metrics }, '[BaseAIService.processMessage] Amount not provided.')
+
+      return await MediaService.sendWhatsAppMessage({
+        from: appSenderWhatsappNumber,
+        to: targetMerchantWhatsappNumber,
+        messageBody: `😮 Boss! You did not provide the amount.\n Please try again and tell me how much is involved.`,
+        withDashboardLink: true,
+        userId,
       })
     }
 
@@ -72,13 +96,45 @@ export default abstract class BaseAIService extends BaseService {
         messageBody = result
         //
       } else {
-        messageBody = `Business action recorded, my boss!. Intent is ${metrics.intent}, type is ${metrics.type}, ${metrics.customerName ? `customer is ${metrics.customerName}, ` : ''}${metrics.itemName ? `item is ${metrics.itemName}, ` : ''}${metrics.quantity ? `quantity is ${metrics.quantity}, ` : ''}amount is ₦${metrics.amount}.`
+        //  Map the metrics types to relatable phrases and emojis
+        const typeMappings: Record<
+          BusinessMetricsStructure['type'],
+          { title: string; emoji: string }
+        > = {
+          sale: { title: 'Sales Record', emoji: '💰' },
+          expense: { title: 'Expense', emoji: '💸' },
+          debt: { title: 'Customer Credit', emoji: '📝' },
+          repayment: { title: 'Credit Payment', emoji: '💰📝' },
+          restock: { title: 'Stock', emoji: '📦' },
+          unknown: { title: 'Record', emoji: '📊' },
+        }
+
+        const mapping = typeMappings[metrics.type]
+
+        const messageLines = [
+          `${mapping.emoji} *${mapping.title} updated successfully, Boss!*`,
+
+          `--------------------------------`,
+
+          metrics.itemName ? `▪️ *Item:* ${metrics.itemName}` : null,
+
+          metrics.amount
+            ? `▪️ *Amount:* ₦${parseFloat(metrics.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+            : null,
+
+          metrics.quantity ? `▪️ *Quantity:* ${metrics.quantity}` : null,
+
+          metrics.customerName ? `▪️ *Customer:* ${metrics.customerName}` : null,
+        ]
+
+        // Filter out null lines and join them with newlines
+        messageBody = messageLines.filter(Boolean).join('\n')
         //
       }
     } catch (error) {
       this.logger.error(
         { err: error, metrics },
-        '[BaseAIService.processVoiceNote -> LedgerService] Database persistence failed for extracted metrics.'
+        '[BaseAIService.processMessage -> LedgerService] Database persistence failed for extracted metrics.'
       )
 
       throw error
@@ -89,16 +145,30 @@ export default abstract class BaseAIService extends BaseService {
       to: targetMerchantWhatsappNumber,
       messageBody,
       withDashboardLink: true,
-      userId
+      userId,
     })
   }
 
   protected abstract transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
 
-  protected groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
+  protected abstract translateText(text: string): Promise<string>
 
-  protected async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
-    const prompt = `
+  protected abstract extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure>
+
+  protected translationPrompt = `
+    You are a highly accurate, direct translation engine for NairaBook.
+    Your single job is to translate the user's input text into clean, natural English.
+    The input text may be in Nigerian Pidgin, Yoruba, Igbo, Hausa, or a mix of English and local dialects.
+    
+    RULES:
+    1. Translate everything literally and contextually into English, whether it is a business transaction, a greeting, a question, or a casual statement.
+    2. Maintain all original proper nouns, names (e.g., Tunde, Musa), item names, numbers, and quantities exactly as they are.
+    3. DO NOT add any conversational filler, notes, or explanations.
+
+    Return ONLY the plain text English translation. No markdown wrappers, no filler.
+  `
+
+  protected extractionPrompt = `
       You are a specialized financial parsing engine for NairaBook, a ledger app for Nigerian micro-merchants.
       Your job is to parse raw text transcripts (which may include Nigerian Pidgin, local business slang, or currency terms) and output a STRICT, valid JSON object.
       
@@ -114,7 +184,7 @@ export default abstract class BaseAIService extends BaseService {
       1. SUBJECT AWARENESS: Distinguish between the merchant ("I") and a customer (e.g., "Tunde", "Musa", "Mama Amaka").
          - If a specific person's name is mentioned buying something (e.g., "Tunde bought one cup of rice"), this is a "sale" transaction, NOT a restock. Extract the name into 'customerName'.
          - Only treat "bought" or "paid for" as a restock inventory entry if the merchant implies THEY ("I") bought it to replenish the shop (e.g., "I bought 3 bags of rice to sell", "I buy market").
-      2. AMOUNT FALLBACK: If an amount is mangled or has typos like "500nra" or "500sad nara", recognize it as the currency amount and extract it cleanly as "500.00".
+      2. AMOUNT FALLBACK: Assume that the currency is always NAIRA. If an amount is mangled or has typos like "500nra" or "500sad nara", recognize it as the currency amount and extract it cleanly as "500.00".
 
       2. Currency/Amount parsing:
          - Extract amounts cleanly. "5k" is "5000.00", "20 thousand" is "20000.00".
@@ -126,6 +196,7 @@ export default abstract class BaseAIService extends BaseService {
          - Examples: 
            "two bags of rice" -> itemName: "rice (bag)", quantity: 2
            "three cups of rice" -> itemName: "rice (cup)", quantity: 3
+           "half bucket of rice" -> itemName: "rice (bucket)", quantity: 0.5
            "one crate of egg" -> itemName: "egg (crate)", quantity: 1
            "5 pieces of egg or 5 eggs" -> itemName: "egg (piece)", quantity: 5
 
@@ -136,83 +207,7 @@ export default abstract class BaseAIService extends BaseService {
         "customerName": "String or null",
         "itemName": "String or null",
         "quantity": integer or null,
-        "amount": "string decimal" or "0.00"
+        "amount": "string decimal or null"
       }
     `
-
-    try {
-      const response = await this.groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: `Parse this transcript: "${text}"` },
-        ],
-        response_format: {
-          type: 'json_object',
-          /*
-          type: 'json_schema',
-          json_schema: {
-            name: 'ledger_extraction',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                intent: {
-                  type: 'string',
-                  enum: ['transaction', 'inventory', 'unknown'],
-                },
-                type: {
-                  type: 'string',
-                  enum: ['sale', 'debt', 'expense', 'restock', 'unknown'],
-                },
-                customerName: {
-                  type: ['string', 'null'],
-                },
-                itemName: {
-                  type: ['string', 'null'],
-                },
-                quantity: {
-                  type: ['integer', 'null'],
-                },
-                amount: {
-                  type: 'string',
-                  description:
-                    'The financial value formatted as a decimal string with 2 decimal places, e.g., "45000.00"',
-                },
-              },
-              required: ['intent', 'type', 'customerName', 'itemName', 'quantity', 'amount'],
-              additionalProperties: false,
-            },
-          },
-          */
-        },
-        temperature: 0.1, // Keep it low for predictable data parsing
-      })
-
-      const content = response.choices[0].message.content
-      if (!content) {
-        const errorMessage = 'Groq returned an empty response payload.'
-
-        this.logger.error(`BaseAIService.extractBusinessMetrics] ${errorMessage}`)
-
-        throw new Error(errorMessage)
-      }
-
-      const metrics = JSON.parse(content)
-
-      this.logger.info(
-        { metrics },
-        '[BaseAIService.extractBusinessMetrics] Business metrics extraction successful.'
-      )
-
-      return metrics
-    } catch (error) {
-      this.logger.error(
-        { err: error },
-        'BaseAIService.extractBusinessMetrics] Business metrics extraction failed.'
-      )
-      throw error
-    }
-  }
 }

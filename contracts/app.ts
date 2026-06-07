@@ -29,5 +29,5 @@ export type BusinessMetricsStructure = {
   customerName: string | null
   itemName: string | null
   quantity: number | null
-  amount: string
+  amount: string | null
 }

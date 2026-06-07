@@ -17,6 +17,14 @@ export default class extends BaseSchema {
         .onUpdate('CASCADE')
         .onDelete('CASCADE')
 
+      table
+        .integer('customer_id')
+        .unsigned()
+        .references('id')
+        .inTable('customers')
+        .onUpdate('CASCADE')
+        .onDelete('RESTRICT')
+
       table.string('name').notNullable()
 
       table.timestamp('created_at', { useTz: true }).notNullable().index()

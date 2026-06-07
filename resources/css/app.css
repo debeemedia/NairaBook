@@ -1,5 +1,5 @@
 /* ----------------- */
-/* NairaBook styles */
+/* NAIRABOOK DASHBOARD STYLES */
 /* ----------------- */
 :root {
   --clr-emerald: #059669;
@@ -12,6 +12,14 @@
   --clr-slate-600: #475569;
   --clr-slate-400: #94a3b8;
   --clr-slate-100: #f1f5f9;
+  /* LANDING PAGE */
+  --primary-color: #25d366; /* WhatsApp Green */
+  --primary-dark: #128c7e;
+  --dark-bg: #0f172a;
+  --card-bg: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
 }
 
 /* Global Responsive Fix for Starter Template layout */
@@ -558,7 +566,229 @@
 }
 
 /* --------------------------- */
-/* Default scaffolded styles */
+/* NAIRABOOK LANDING PAGE STYLES */
+/* -------------------------- */
+
+/* Global Container Tweaks */
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--dark-bg);
+}
+.logo {
+  font-size: 1.25rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.nav-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-link:hover {
+  color: var(--primary-dark);
+}
+
+.landing-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+/* Hero Styles */
+.hero-section {
+  text-align: center;
+  margin-bottom: 5rem;
+}
+.badge {
+  display: inline-block;
+  background: rgba(37, 211, 102, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(37, 211, 102, 0.2);
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+.hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+.gradient-text {
+  background: linear-gradient(to right, #25d366, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  max-width: 700px;
+  margin: 0 auto 2.5rem auto;
+  line-height: 1.6;
+}
+
+/* CTA Buttons */
+.hero-cta-group {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+.btn {
+  padding: 0.8rem 1.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: var(--primary-color);
+  color: #000;
+}
+.btn-primary:hover {
+  background: var(--primary-dark);
+  color: #fff;
+}
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+/* Interactive Preview Box */
+.demo-preview-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 650px;
+  margin: 0 auto;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.preview-tag {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.text-muted {
+  color: var(--text-muted);
+}
+.text-success {
+  color: var(--primary-color);
+}
+.preview-quote {
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--text-main);
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border-color);
+}
+.preview-arrow {
+  text-align: center;
+  margin: 0.75rem 0;
+  font-size: 1.2rem;
+}
+.preview-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+/* Features Grid */
+.features-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 4rem;
+}
+.section-heading {
+  text-align: center;
+  color: var(--text-main);
+  margin-bottom: 3rem;
+  font-size: 1.75rem;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+}
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.feature-card h3 {
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+.feature-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.landing-footer {
+  text-align: center;
+  margin-top: 6rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+  }
+}
+
+/* Makes the 5th card look natural and balanced */
+@media (min-width: 768px) {
+  .features-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .feature-card:nth-child(1),
+  .feature-card:nth-child(2),
+  .feature-card:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .feature-card:nth-child(4),
+  .feature-card:nth-child(5) {
+    grid-column: span 3;
+  }
+}
+
+/* --------------------------- */
+/* ADONIS JS BOILERPLATE STYLES */
 /* -------------------------- */
 
 /* :root {
@@ -646,8 +876,7 @@ header nav a.current {
   border: 1px solid var(--gray-3);
 } */
 
-/* Leave this enableed for the default home page. */
-.hero {
+/* .hero {
   padding: 100px 50px;
   max-width: 880px;
 }
@@ -666,7 +895,7 @@ header nav a.current {
   margin-top: 30px;
   display: inline-block;
   padding: 10px 16px;
-}
+} */
 
 /* .cards {
   display: grid;

@@ -1,31 +1,123 @@
 @layout()
-  <div class="hero">
-    <h1>NairaBook is an AI-powered ledger for informal retail traders in Nigeria.</h1>
-    <h2>
-      Features a powerful dashboard to track, filter, and export sales and expenses, alongside monitoring customer debts and product inventory.
-    </h2>
-    <p>
-      Simply record a WhatsApp voice note e.g "I sold two buckets of rice for 6000 Naira." and hit send. Your transaction is recorded as a sale, you get instant feedback with a personalized dashboard link, and your dashboard is updated immediately!
-    </p>
-    <p>
-      You can record a sale, expense, customer credit, credit repayment, and product stock update. You're the boss!
-    </p>
-    <button class="button">Chat with our WhatsApp bot</button>
-  </div>
-  {{--
-    <div class="cards">
-    <a href="https://insiders.adonisjs.com/docs/v7-alpha/introduction" target="_blank">
-    <h3>Official Docs &nbsp;›</h3>
-    <p>Comprehensive reference for building with AdonisJS</p>
-    </a>
-    <a href="https://adocasts.com/" target="_blank">
-    <h3>Adocasts &nbsp;›</h3>
-    <p>Guided video tutorials for everyday development</p>
-    </a>
-    <a href="https://discord.gg/vDcEjq6" target="_blank">
-    <h3>Discord &nbsp;›</h3>
-    <p>Connect with developers building with AdonisJS every day</p>
-    </a>
-    </div>
-  --}}
+  <header class="nav-container">
+    <div class="logo"><span class="logo-emoji">📖</span> <strong>NairaBook</strong></div>
+    {{-- <a href="/d" class="nav-link">Go to Shop Dashboard &nbsp;›</a> --}}
+  </header>
+
+  <main class="landing-wrapper">
+    <section class="hero-section">
+      {{-- <div class="badge">✨ Secure, Fast & Reliable</div> --}}
+      <div class="badge">🚀 Powered by Aethex AI</div>
+      <h1 class="hero-title">
+        The Easiest Way to Track Your
+        <br />
+        <span class="gradient-text">Sales, Expenses & Debts</span>
+      </h1>
+      <p class="hero-subtitle">
+        Stop losing money to forgotten debts and unrecorded sales. NairaBook records everything for you automatically, straight from your WhatsApp voice notes and chats.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="https://wa.me/OUR_BOT_NUMBER" target="_blank" class="btn btn-primary">
+          💬 Try it on WhatsApp
+        </a>
+        {{-- <a href="/d" class="btn btn-secondary">Open My Shop Records</a> --}}
+      </div>
+
+      <div class="demo-preview-card">
+        <div class="preview-tag text-muted">🎙️ What you say to the WhatsApp Bot:</div>
+        <div class="preview-quote">
+          "Amaka buy two crate of egg twelve thousand naira, but she pay ten thousand first, she go balance me next week Saturday"
+        </div>
+        <div class="preview-arrow">⬇️</div>
+        <div class="preview-tag text-success">📊 What NairaBook records instantly:</div>
+        <div class="preview-result">
+          <span><strong>Total Sale:</strong> ₦12,000.00</span>
+          •
+          <span><strong>Customer Debt (Amaka):</strong> ₦2,000.00</span>
+          •
+          <span><strong>Shop Stock:</strong> -2 Crates</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <h2 class="section-heading">Built exactly for how you run your business</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💰</div>
+          <h3>Daily Sales</h3>
+          <p>
+            Record customer purchases mid-sale without touching a pen. Just speak or type in English, Pidgin, Igbo, Yoruba etc. and keep moving.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">💸</div>
+          <h3>Shop Expenses</h3>
+          <p>
+            Track exactly where your money goes. Log transport fares, fuel purchases, or supplier payments instantly so your balance stays correct.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>Customer Debt Book</h3>
+          <p>
+            Never argue over who owes what. NairaBook tracks credit sales and automatically updates the balance when a customer makes a part-payment.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Stock Control</h3>
+          <p>
+            Know exactly what is left on your shelves. Your inventory automatically reduces when you log a sale, warning you before you run out.
+          </p>
+        </div>
+
+        <div class="feature-card statement-card">
+          <div class="feature-icon">📥</div>
+          <h3>Transaction Statements</h3>
+          <p>Need clean business records? View your full transaction history on your dashboard and export detailed statements to Excel in one click.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <p>© {{ new Date().getFullYear() }} NairaBook. Built for merchants, optimized for scale.</p>
+    </footer>
+  </main>
 @end
+{{-- ADONIS JS BOILERPLATE --}}
+{{--
+  <div class="hero">
+  <h1>NairaBook is an AI-powered ledger for informal retail traders in Nigeria.</h1>
+  <h2>
+  Features a powerful dashboard to track, filter, and export sales and expenses, alongside monitoring customer debts and product inventory.
+  </h2>
+  <p>
+  Simply send a WhatsApp voice note or text e.g [Pidgin English] -> "Amaka buy two crate of egg twelve thousand". The transaction is recorded as a sale, you get instant feedback with a personalized dashboard link, and your dashboard is updated immediately!
+  </p>
+  <p>
+  You can record a sale, expense, customer credit, credit repayment, and product stock update. You're the boss!
+  </p>
+  <button class="button">Chat with our WhatsApp bot</button>
+  </div>
+--}}
+{{--
+  <div class="cards">
+  <a href="https://insiders.adonisjs.com/docs/v7-alpha/introduction" target="_blank">
+  <h3>Official Docs &nbsp;›</h3>
+  <p>Comprehensive reference for building with AdonisJS</p>
+  </a>
+  <a href="https://adocasts.com/" target="_blank">
+  <h3>Adocasts &nbsp;›</h3>
+  <p>Guided video tutorials for everyday development</p>
+  </a>
+  <a href="https://discord.gg/vDcEjq6" target="_blank">
+  <h3>Discord &nbsp;›</h3>
+  <p>Connect with developers building with AdonisJS every day</p>
+  </a>
+  </div>
+--}}
