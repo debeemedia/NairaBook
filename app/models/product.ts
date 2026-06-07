@@ -1,4 +1,4 @@
-import { BaseModel, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import User from './user.ts'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import ProductInventoryLog from './product_inventory_log.ts'
