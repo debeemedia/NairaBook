@@ -20,9 +20,16 @@ export default class LedgerService extends BaseService {
     const normalizedItemName = metrics.itemName ? metrics.itemName.toLowerCase().trim() : null
 
     await db.transaction(async (trx) => {
+      /**
+       * @todo: Optionally record customer for sale transaction. Display that in the dasboard too when done.
+       */
       const transaction = await Transaction.create(
         {
           amount: parseFloat(metrics.amount!),
+          /**
+           * @todo: Make itemName required for recording sales and expenses?
+           * Or leave it as it is now to avoid friction?
+           */
           itemName: metrics.itemName || 'Unknown Item',
           quantity: metrics.quantity || 1,
           type: metrics.type,
