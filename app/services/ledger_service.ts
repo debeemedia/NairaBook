@@ -96,7 +96,8 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
-    const returnMessage = 'Boss, you seem to be recording a debt but you did not mention'
+    const returnMessage =
+      '😮 Boss, you seem to be recording a customer credit but you did not mention'
     if (!metrics.customerName?.trim()) {
       this.logger.warn(
         { userId, metrics },
@@ -201,7 +202,8 @@ export default class LedgerService extends BaseService {
     metrics: BusinessMetricsStructure
     userId: number
   }) {
-    const returnMessage = 'Boss, you seem to be recording a debt repayment but you did not mention'
+    const returnMessage =
+      '😮 Boss, you seem to be recording a credit repayment but you did not mention'
 
     if (!metrics.customerName?.trim()) {
       this.logger.warn(
@@ -230,7 +232,7 @@ export default class LedgerService extends BaseService {
         `[LedgerService.handleDebtRepayment] Received debt repayment for non-existent customer.`
       )
 
-      return `Boss, I can't find this customer in our records.`
+      return `🔍👀 Boss, are you sure? I can't find this customer in our records.`
     }
 
     await db.transaction(async (trx) => {
@@ -331,7 +333,7 @@ export default class LedgerService extends BaseService {
         '[LedgerService.handleInventory] Received inventory without an itemName. Aborting.'
       )
 
-      return `Boss, you seem to be recording a product inventory but you did not mention the item.`
+      return `😮 Boss, you seem to be recording a product restock but you did not mention the item.`
     }
 
     const normalizedItemName = metrics.itemName.toLowerCase().trim()

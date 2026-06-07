@@ -45,7 +45,7 @@ export default abstract class BaseAIService extends BaseService {
       return await MediaService.sendWhatsAppMessage({
         from: appSenderWhatsappNumber,
         to: targetMerchantWhatsappNumber,
-        messageBody: `Boss! I didn't quite catch that business action. Can you be more specific?`,
+        messageBody: `😮 Boss, I didn't get that clearly.\nPlease try again! Say something like:\n"I sold two bags of rice for 20k" or "Tunde bought 3 eggs on credit."`,
         withDashboardLink: true,
         userId,
       })
@@ -61,7 +61,7 @@ export default abstract class BaseAIService extends BaseService {
       return await MediaService.sendWhatsAppMessage({
         from: appSenderWhatsappNumber,
         to: targetMerchantWhatsappNumber,
-        messageBody: `Boss! You did not provide any amount for this business action.`,
+        messageBody: `😮 Boss! You did not provide the amount.\n Please try again and tell me how much is involved.`,
         withDashboardLink: true,
         userId,
       })
@@ -96,7 +96,39 @@ export default abstract class BaseAIService extends BaseService {
         messageBody = result
         //
       } else {
-        messageBody = `Business action recorded, my boss!. Intent is ${metrics.intent}, type is ${metrics.type}, ${metrics.customerName ? `customer is ${metrics.customerName}, ` : ''}${metrics.itemName ? `item is ${metrics.itemName}, ` : ''}${metrics.quantity ? `quantity is ${metrics.quantity}, ` : ''}amount is ₦${metrics.amount}.`
+        //  Map the metrics types to relatable phrases and emojis
+        const typeMappings: Record<
+          BusinessMetricsStructure['type'],
+          { title: string; emoji: string }
+        > = {
+          sale: { title: 'Sales Record', emoji: '💰' },
+          expense: { title: 'Expense', emoji: '💸' },
+          debt: { title: 'Customer Credit', emoji: '📝' },
+          repayment: { title: 'Credit Payment', emoji: '💰📝' },
+          restock: { title: 'Stock', emoji: '📦' },
+          unknown: { title: 'Record', emoji: '📊' },
+        }
+
+        const mapping = typeMappings[metrics.type]
+
+        const messageLines = [
+          `${mapping.emoji} *${mapping.title} updated successfully, Boss!*`,
+
+          `--------------------------------`,
+
+          metrics.itemName ? `▪️ *Item:* ${metrics.itemName}` : null,
+
+          metrics.amount
+            ? `▪️ *Amount:* ₦${parseFloat(metrics.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+            : null,
+
+          metrics.quantity ? `▪️ *Quantity:* ${metrics.quantity}` : null,
+
+          metrics.customerName ? `▪️ *Customer:* ${metrics.customerName}` : null,
+        ]
+
+        // Filter out null lines and join them with newlines
+        messageBody = messageLines.filter(Boolean).join('\n')
         //
       }
     } catch (error) {

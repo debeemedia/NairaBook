@@ -57,7 +57,7 @@ export default class WebhooksController {
         if (fileSizeInBytes === 0) {
           return response.status(200).header('Content-Type', 'text/xml').send(`
               <Response>
-                <Message>Boss, your voice note seems to be empty. Try recording again!</Message>
+                <Message>😶 Boss, nothing dey this your voice note o! Try recording again.</Message>
               </Response>
             `)
         }
@@ -71,7 +71,7 @@ export default class WebhooksController {
           )
           return response.status(200).header('Content-Type', 'text/xml').send(`
               <Response>
-                <Message>Boss, this voice note is too long! Please keep your recording short and under ${maxFileSizeInMB}MB.</Message>
+                <Message>😭 Boss, this voice note is too long o! Please keep it short and under ${maxFileSizeInMB}MB.</Message>
               </Response>
             `)
         }
