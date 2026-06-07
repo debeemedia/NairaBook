@@ -68,6 +68,7 @@
     "@vinejs/vine": "^4.4.0",
     "better-sqlite3": "^12.10.0",
     "edge.js": "^6.5.1",
+    "groq-sdk": "^1.2.1",
     "luxon": "^3.7.2",
     "reflect-metadata": "^0.2.2"
   },
