@@ -196,6 +196,7 @@ export default abstract class BaseAIService extends BaseService {
          - Examples: 
            "two bags of rice" -> itemName: "rice (bag)", quantity: 2
            "three cups of rice" -> itemName: "rice (cup)", quantity: 3
+           "half bucket of rice" -> itemName: "rice (bucket)", quantity: 0.5
            "one crate of egg" -> itemName: "egg (crate)", quantity: 1
            "5 pieces of egg or 5 eggs" -> itemName: "egg (piece)", quantity: 5
 
