@@ -12,3 +12,5 @@ export const TransactionTypesEnum = {
   Sale: 'sale',
   Expense: 'expense',
 } as const
+
+export const transactionTypes = Object.values(TransactionTypesEnum)
