@@ -9,6 +9,12 @@ export default class AppProvider {
    * Register bindings to the container
    */
   register() {
+    /**
+     * CRITICAL: Do not change this to singleton. And always instantiate the class instances on every request.
+     *
+     * We use `this.app.container.bind` here because our AI Service classes (specifically GeminiAI) maintain state variables (like `#audioRan` flag) that are scoped to a request.
+     * Using `bind` ensures that the request lifecycle is transient and a brand new class instance is instantiated via `new` on every HTTP request. This prevents state leakage between concurrent requests.
+     */
     this.app.container.bind(BaseAIService, async () => {
       const aethexAiService = (await import('../app/services/ai_service/aethex_ai.ts')).default
       const groqAiService = (await import('../app/services/ai_service/groq_ai.ts')).default

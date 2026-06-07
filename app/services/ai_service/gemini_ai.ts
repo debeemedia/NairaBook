@@ -6,17 +6,20 @@ import { GoogleGenAI, Type } from '@google/genai'
 export default class GeminiAI extends BaseAIService {
   #gemini = new GoogleGenAI({ apiKey: env.get('GEMINI_API_KEY') })
 
-  #isStandaloneTextCall?: boolean
+  /**
+   * NB: Since the transcribed text coming from `transcribeAudio` (when going through the full Gemini pipeline) is already translated, we skip the extra call to translate again.
+   * However, text-only requests can come in from the user, which bypasses `transcribeAudio`. Also Aethex API calls Gemini's `translateText`; this also bypasses `transcribeAudio`. So we use the `audioRan` flag to check this.
+   */
+  #audioRan: boolean = false
 
-  constructor(config?: { isStandaloneTextCall?: boolean }) {
-    super()
-    this.#isStandaloneTextCall = config?.isStandaloneTextCall ?? false
-  }
   /**
    * Gemini can translate Nigerian local languages well.
    * But I've observed that the model performs better when transcription and translation are done in one prompot. When split, the transcription is as good as Aethex' (not good).
    */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
+    // Set this flag to true
+    this.#audioRan = true
+
     try {
       const base64Audio = Buffer.from(audioBuffer).toString('base64')
 
@@ -111,14 +114,11 @@ export default class GeminiAI extends BaseAIService {
     */
 
   async translateText(text: string): Promise<string> {
-    /**
-     * NB: Since the text coming from `transcribeAudio` (when going through the full Gemini piopeline) is already translated, we skip the extra call to translate again.
-     * However, Aethex API calls Gemini's `translateText`. This is where we use the flag `isStandaloneTextCall`
-     */
-    if (!this.#isStandaloneTextCall) {
+    // Ensure that already-translated texts from the `transcribeAudio` pipeline do not make an extra call for trnanslation.
+    if (this.#audioRan) {
       this.logger.info(
         { text },
-        '[GeminiAI.translateText] Internal pipeline flow from Gemini ensures text is already translated. Skipping API call.'
+        '[GeminiAI.translateText] Internal audio pipeline flow from Gemini ensures text is already translated. Skipping API call.'
       )
       return text
     }
@@ -126,7 +126,7 @@ export default class GeminiAI extends BaseAIService {
     try {
       this.logger.info(
         { text },
-        '[GeminiAI.translateText] External pipeline activates `isStandaloneTextCall` mode. Requesting API translation...'
+        '[GeminiAI.translateText] Text-only or External pipeline bypassed `audioRan` mode. Requesting API translation...'
       )
 
       const response = await this.#gemini.models.generateContent({

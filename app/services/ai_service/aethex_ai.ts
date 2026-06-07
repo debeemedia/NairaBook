@@ -66,9 +66,7 @@ export default class AethexAI extends BaseAIService {
 
       this.logger.info('[AethexAI.getTextToTextAIService] Delegating to GeminiAI...')
 
-      return new GeminiAiClass({
-        isStandaloneTextCall: true,
-      }) /** Check the GeminiAI class for the importance of the `isStandaloneTextCall` flag */
+      return new GeminiAiClass()
     }
 
     const GroqAiClass = (await import('./groq_ai.ts')).default
