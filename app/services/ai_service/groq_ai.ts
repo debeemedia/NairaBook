@@ -7,7 +7,7 @@ export default class GroqAI extends BaseAIService {
   #groq = new Groq({ apiKey: env.get('GROQ_API_KEY') })
 
   /**
-   * Note that Groq (Whisper & Qwen) is useless for transcribing & translating Nigerian local languages.
+   * Note that Groq Whisper is useless for transcribing Nigerian local languages.
    * Kept here as fallback. Useful for English, maybe Pidgin. Unlimited tries with no rate limits when testing.
    */
   async transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
@@ -41,7 +41,7 @@ export default class GroqAI extends BaseAIService {
   async translateText(text: string): Promise<string> {
     try {
       const response = await this.#groq.chat.completions.create({
-        model: 'qwen/qwen3-32b',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: this.translationPrompt },
           { role: 'user', content: text },
@@ -51,7 +51,7 @@ export default class GroqAI extends BaseAIService {
 
       const translatedText = response.choices[0].message.content?.trim()
 
-      // Qwen model outputs a "think" block along with the translation. Strip it off
+      // Strip off any "think" block that may come with the translation.
       const cleanTranslatedText = translatedText
         ? translatedText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
         : ''
@@ -83,8 +83,7 @@ export default class GroqAI extends BaseAIService {
   async extractBusinessMetrics(text: string): Promise<BusinessMetricsStructure> {
     try {
       const response = await this.#groq.chat.completions.create({
-        model: 'qwen/qwen3-32b', // Better (but perhaps slower) than "llama-3.1-8b-instant"
-        // model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-120b',
         // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
         messages: [
           { role: 'system', content: this.extractionPrompt },
