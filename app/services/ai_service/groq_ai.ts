@@ -84,7 +84,6 @@ export default class GroqAI extends BaseAIService {
     try {
       const response = await this.#groq.chat.completions.create({
         model: 'openai/gpt-oss-120b',
-        // model: 'meta-llama/llama-4-scout-17b-16e-instruct', // supports json_schema response format
         messages: [
           { role: 'system', content: this.extractionPrompt },
           { role: 'user', content: `Parse this transcript: "${text}"` },
